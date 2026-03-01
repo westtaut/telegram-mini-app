@@ -327,6 +327,6 @@ setInterval(() => {
 // Broadcast leaderboard every 30s
 setInterval(broadcastLeaderboard, 30000);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🐱 Gacha Cats server running on port ${PORT}`);
 });
