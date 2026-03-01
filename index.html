@@ -80,15 +80,20 @@ button.secondary{
   padding:20px 0;
 }
 
-/* Кнопка магазина сверху слева */
+/* Кнопка магазина сверху слева - круглая */
 #shop-btn{
   position:fixed;
   top:16px;
   left:16px;
   z-index:1000;
-  padding:14px 18px;
-  font-size:18px;
-  border-radius:20px;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  font-size:24px;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   background:linear-gradient(135deg,var(--accent2),var(--accent));
   box-shadow:0 6px 15px rgba(0,0,0,.25);
 }
@@ -107,6 +112,7 @@ button.secondary{
   .card{padding:14px;font-size:15px;}
   button{padding:16px;font-size:16px;}
   .menu button{font-size:22px;padding:22px 0;}
+  #shop-btn{width:45px;height:45px;font-size:22px;}
 }
 </style>
 </head>
@@ -117,7 +123,7 @@ button.secondary{
 <div class="balance">💰 <span id="coins">0</span></div>
 
 <!-- Кнопка магазина сверху -->
-<button id="shop-btn" onclick="showScreen('shop')">🛒 Магазин</button>
+<button id="shop-btn" onclick="showScreen('shop')">🛒</button>
 
 <div id="screen-main"></div>
 <div id="screen-gacha" class="hidden"></div>
@@ -155,13 +161,22 @@ const CAGE_TYPES = [
  {emoji:"🌌",name:"Божественная",slots:1,price:3000,allowed:["Mythic"]},
 ];
 
-/* ===== СОСТОЯНИЕ ===== */
+/* ===== СОСТАНИЕ ===== */
 let state = JSON.parse(localStorage.getItem("gacha_safe")) || {
   coins: 300,
   inventory: [],
   cages: [],
   lastTick: Date.now()
 };
+
+/* ===== Инициализация стартового состояния ===== */
+if(state.cages.length === 0){
+  state.cages.push({...CAGE_TYPES[0], cats: []}); // 1 деревянная клетка
+}
+if(state.inventory.length === 0){
+  state.inventory.push({...CAT_TEMPLATES[0], id: Math.random().toString(36).slice(2)+Date.now()}); // 1 обычный кот
+}
+
 function save(){ localStorage.setItem("gacha_safe", JSON.stringify(state)); }
 
 /* ===== УТИЛИТЫ ===== */
