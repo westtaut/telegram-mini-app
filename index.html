@@ -102,14 +102,14 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
 /* ═══ SCREENS ═══ */
 .car{
   display:flex;
-  width:700%;
+  width:600%;
   height:calc(100dvh - var(--hdr-h) - var(--nav-h) - var(--safe-bot));
   margin-top:var(--hdr-h);
   transition:transform .32s cubic-bezier(.4,0,.2,1);
   will-change:transform;
 }
 .scr{
-  width:calc(100%/7);
+  width:calc(100%/6);
   overflow-y:auto;overflow-x:hidden;
   padding:12px 14px calc(20px + var(--safe-bot));
   -webkit-overflow-scrolling:touch;
@@ -573,6 +573,40 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
 .empty-state{text-align:center;padding:32px 16px;color:var(--txt3)}
 .empty-state-ico{font-size:40px;display:block;margin-bottom:8px}
 .empty-state-txt{font-size:14px}
+
+/* ═══ INNER TABS (Battle / Top screens) ═══ */
+.inner-tabs{display:flex;background:var(--bg2);border-radius:11px;padding:3px;margin-bottom:14px;gap:0}
+.inner-tab{flex:1;padding:8px 6px;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:none;color:var(--txt2);font-family:var(--font);transition:all .15s;position:relative}
+.inner-tab.on{background:var(--bg1);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.inner-tab .tab-dot{position:absolute;top:4px;right:6px;width:7px;height:7px;background:var(--red);border-radius:50%;display:none}
+.inner-tab .tab-dot.show{display:block}
+
+/* nb-dot2 — second dot (blue for pvp) */
+.nb-dot2{position:absolute;top:2px;right:calc(50% - 28px);width:8px;height:8px;background:var(--blue);border-radius:50%;border:2px solid var(--bg1);display:none}
+.nb-dot2.show{display:block}
+
+/* ═══ PROFILE MODAL ═══ */
+#profile-modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end}
+#profile-modal.open{display:flex;animation:modal-in .2s ease}
+.profile-sheet{background:var(--bg1);border-radius:22px 22px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:0 16px calc(32px + var(--safe-bot));border-top:.5px solid var(--sep);animation:sheet-up .22s cubic-bezier(.32,0,.67,0)}
+.profile-avatar-row{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:44px;cursor:pointer;border:2.5px solid var(--blue);position:relative;margin-bottom:10px}
+.profile-avatar::after{content:'✏️';position:absolute;bottom:-2px;right:-2px;font-size:16px;background:var(--bg1);border-radius:50%;padding:2px}
+.profile-name{font-size:20px;font-weight:700;text-align:center}
+.profile-uid{font-size:11px;color:var(--txt3);margin-top:2px}
+.avatar-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px}
+.av-opt{background:var(--bg2);border-radius:12px;padding:8px 4px;text-align:center;font-size:26px;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.av-opt:active{transform:scale(.9)}
+.av-opt.sel{border-color:var(--blue);background:rgba(10,132,255,.12)}
+.profile-best-cat{background:var(--bg2);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer}
+.profile-best-cat:active{background:var(--bg3)}
+
+/* ═══ LEADERBOARD REALTIME ═══ */
+.lb-live{font-size:10px;color:var(--teal);font-weight:700;animation:lb-pulse 2s ease-in-out infinite}
+@keyframes lb-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.lb-row{cursor:pointer;transition:background .08s}
+.lb-row:active{background:var(--bg2)}
+.lb-player-modal{background:var(--bg1);border-radius:22px 22px 0 0;width:100%;max-height:72vh;overflow-y:auto;padding:0 16px calc(24px + var(--safe-bot));border-top:.5px solid var(--sep)}
 </style>
 </head>
 <body>
@@ -588,11 +622,14 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
       <div class="hdr-status off" id="hdr-online"><span class="hdr-status-dot"></span> Офлайн</div>
     </div>
   </div>
-  <div class="resources">
-    <div class="res-chip c"><span class="res-ico">💰</span><span id="coins">0</span></div>
-    <div class="res-chip f"><span class="res-ico">🐟</span><span id="fish-count">0</span></div>
-    <div class="res-chip s"><span class="res-ico">⭐</span><span id="star-count">0</span></div>
-    <div class="res-chip g"><span class="res-ico">💎</span><span id="gem-count">0</span></div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <div class="resources">
+      <div class="res-chip c"><span class="res-ico">💰</span><span id="coins">0</span></div>
+      <div class="res-chip f"><span class="res-ico">🐟</span><span id="fish-count">0</span></div>
+      <div class="res-chip s"><span class="res-ico">⭐</span><span id="star-count">0</span></div>
+      <div class="res-chip g"><span class="res-ico">💎</span><span id="gem-count">0</span></div>
+    </div>
+    <button onclick="openProfile()" style="background:var(--bg2);border:none;width:36px;height:36px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="hdr-avatar">😺</button>
   </div>
 </div>
 
@@ -604,7 +641,6 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
   <div class="scr" id="s3"></div>
   <div class="scr" id="s4"></div>
   <div class="scr" id="s5"></div>
-  <div class="scr" id="s6"></div>
 </div>
 
 <!-- NAV -->
@@ -616,20 +652,17 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
     <div class="nb-ico">🎰</div><div class="nb-lbl">Гача</div>
   </button>
   <button class="nb" id="nb2" onclick="go(2)">
-    <div class="nb-ico">⚔️</div><div class="nb-lbl">Рейды</div>
+    <div class="nb-ico">⚔️</div><div class="nb-lbl">Бой</div>
     <div class="nb-dot" id="raid-dot"></div>
+    <div class="nb-dot2" id="pvp-dot"></div>
   </button>
   <button class="nb" id="nb3" onclick="go(3)">
-    <div class="nb-ico">🥊</div><div class="nb-lbl">PvP</div>
-    <div class="nb-dot" id="pvp-dot"></div>
-  </button>
-  <button class="nb" id="nb4" onclick="go(4)">
     <div class="nb-ico">🏆</div><div class="nb-lbl">Топ</div>
   </button>
-  <button class="nb" id="nb5" onclick="go(5)">
+  <button class="nb" id="nb4" onclick="go(4)">
     <div class="nb-ico">🛒</div><div class="nb-lbl">Магазин</div>
   </button>
-  <button class="nb" id="nb6" onclick="go(6)">
+  <button class="nb" id="nb5" onclick="go(5)">
     <div class="nb-ico">🎒</div><div class="nb-lbl">Инвентарь</div>
   </button>
 </nav>
@@ -858,7 +891,7 @@ function pushFullState(){
   },10000);
 }
 let _syncT=null;
-function syncToServer(){clearTimeout(_syncT);_syncT=setTimeout(()=>{if(!serverOnline)return;const all=[...S.inventory,...S.cages.flatMap(c=>c.cats)];const top=all.sort((a,b)=>petPower(b)-petPower(a))[0];fetch(`${SERVER_URL}/api/player/sync`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:MY_UID,name:MY_NAME,data:{pvpScore:S.pvpScore,pvpWins:S.pvpWins,pvpLosses:S.pvpLosses,topCatEmoji:top?.emoji||'😺',topRarity:top?.rarity||'Common',maxLevel:all.reduce((m,p)=>Math.max(m,p.level||1),1),maxPower:all.reduce((m,p)=>Math.max(m,petPower(p)),0),lastSeen:Date.now()}})}).catch(()=>{});},3000);}
+function syncToServer(){clearTimeout(_syncT);_syncT=setTimeout(()=>{if(!serverOnline)return;const all=[...S.inventory,...S.cages.flatMap(c=>c.cats)];const top=all.sort((a,b)=>petPower(b)-petPower(a))[0];const myNick=S.profile?.nick||MY_NAME;const myAvatar=S.profile?.avatar||'😺';fetch(`${SERVER_URL}/api/player/sync`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:MY_UID,name:myNick,data:{pvpScore:S.pvpScore,pvpWins:S.pvpWins,pvpLosses:S.pvpLosses,topCatEmoji:top?.emoji||'😺',avatar:myAvatar,topRarity:top?.rarity||'Common',maxLevel:all.reduce((m,p)=>Math.max(m,p.level||1),1),maxPower:all.reduce((m,p)=>Math.max(m,petPower(p)),0),lastSeen:Date.now()}})}).catch(()=>{});},3000);}
 const cloudLoad=cb=>{
   // Try Telegram CloudStorage first, then server-side save
   const tryServerLoad=(localData)=>{
@@ -901,17 +934,17 @@ let _retries=0;
 function initSocket(){
   if(!SERVER_URL||SERVER_URL.includes('YOUR-SERVER')){showConn('','⚪ Офлайн режим');setTimeout(hideConn,3000);return;}
   showConn('','🔌 Подключение...');
-  fetch(`${SERVER_URL}/api/leaderboard`,{signal:AbortSignal.timeout(12000)}).then(r=>r.json()).then(d=>{lbData=d;if(cur===4)renderLB();}).catch(()=>{}).finally(()=>_conn());
+  fetch(`${SERVER_URL}/api/leaderboard`,{signal:AbortSignal.timeout(12000)}).then(r=>r.json()).then(d=>{lbData=d;if(cur===3)renderLB();}).catch(()=>{}).finally(()=>_conn());
 }
 function _conn(){
   try{
     if(socket){socket.disconnect();socket=null;}
     socket=io(SERVER_URL,{transports:['polling','websocket'],timeout:15000,reconnectionAttempts:10,reconnectionDelay:2000,reconnectionDelayMax:10000});
-    socket.on('connect',()=>{serverOnline=true;_retries=0;socket.emit('player_join',{uid:MY_UID,name:MY_NAME});const el=document.getElementById('hdr-online');el.innerHTML='<span class="hdr-status-dot"></span> Онлайн';el.className='hdr-status';showConn('online','🟢 Онлайн');setTimeout(hideConn,3000);});
+    socket.on('connect',()=>{serverOnline=true;_retries=0;const myNick=S?.profile?.nick||MY_NAME;socket.emit('player_join',{uid:MY_UID,name:myNick});const el=document.getElementById('hdr-online');el.innerHTML='<span class="hdr-status-dot"></span> Онлайн';el.className='hdr-status';showConn('online','🟢 Онлайн');setTimeout(hideConn,3000);});
     socket.on('connect_error',()=>{serverOnline=false;_retries++;const el=document.getElementById('hdr-online');el.innerHTML='<span class="hdr-status-dot"></span> Офлайн';el.className='hdr-status off';if(_retries===1)showConn('','⏳ Сервер просыпается...');else if(_retries>=5){showConn('','❌ Недоступен — проверь URL');setTimeout(hideConn,5000);}});
-    socket.on('disconnect',()=>{serverOnline=false;const el=document.getElementById('hdr-online');el.innerHTML='<span class="hdr-status-dot"></span> Офлайн';el.className='hdr-status off';if(pvpQueueStatus!=='idle'){pvpQueueStatus='idle';if(cur===3)renderPvP();}});
-    socket.on('leaderboard_update',d=>{lbData=d;if(cur===4)renderLB();});
-    socket.on('pvp_queue_status',({status,waitSeconds,queueSize})=>{pvpQueueStatus=status;pvpWaitSeconds=waitSeconds||0;pvpQueueSize=queueSize||1;document.getElementById('pvp-dot').classList.toggle('show',status==='searching');if(cur===3)renderPvP();});
+    socket.on('disconnect',()=>{serverOnline=false;const el=document.getElementById('hdr-online');el.innerHTML='<span class="hdr-status-dot"></span> Офлайн';el.className='hdr-status off';if(pvpQueueStatus!=='idle'){pvpQueueStatus='idle';if(cur===2)renderBattle();}});
+    socket.on('leaderboard_update',d=>{lbData=d;if(cur===3)renderLB();});
+    socket.on('pvp_queue_status',({status,waitSeconds,queueSize})=>{pvpQueueStatus=status;pvpWaitSeconds=waitSeconds||0;pvpQueueSize=queueSize||1;document.getElementById('pvp-dot').classList.toggle('show',status==='searching');if(cur===2)renderBattle();});
     socket.on('pvp_battle_result',data=>{pvpQueueStatus='idle';document.getElementById('pvp-dot').classList.remove('show');processBattleResult(data);socket.emit('battle_ack',{matchId:data.matchId});});
   }catch(e){serverOnline=false;}
 }
@@ -949,21 +982,23 @@ function updHdr(){
   document.getElementById("fish-count").textContent=fmt(S.fish);
   document.getElementById("star-count").textContent=fmt(S.stars);
   document.getElementById("gem-count").textContent=fmt(S.gems);
+  const av=S.profile?.avatar||'😺';
+  document.getElementById("hdr-avatar").textContent=av;
 }
 
 /* ══ RAIDS ══ */
-function checkRaids(){const now=Date.now();let changed=false;S.raids.forEach(r=>{if(!r.done&&now>=r.endTime){r.done=true;changed=true;}});const done=S.raids.filter(r=>r.done&&!r.claimed);document.getElementById('raid-dot').classList.toggle('show',done.length>0);if(changed){save();if(cur===2)renderRaids();}}
+function checkRaids(){const now=Date.now();let changed=false;S.raids.forEach(r=>{if(!r.done&&now>=r.endTime){r.done=true;changed=true;}});const done=S.raids.filter(r=>r.done&&!r.claimed);document.getElementById('raid-dot').classList.toggle('show',done.length>0);if(changed){save();if(cur===2)renderBattle();}}
 let selRaidId=null,selRaidPetUid=null;
 function openRaidModal(raidId){const raid=RAIDS.find(r=>r.id===raidId);if(!raid)return;H();const all=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid&&petPower(p)>=raid.minPow);document.getElementById("raid-m-t").textContent=raid.emoji+" "+raid.name;document.getElementById("raid-m-s").textContent=`Мин. сила: ⚔️${raid.minPow} · ${fmtT(raid.dur)}`;const list=document.getElementById("raid-m-l");list.innerHTML="";selRaidPetUid=null;selRaidId=raidId;document.getElementById("raid-m-go").disabled=true;if(!all.length){list.innerHTML=`<div class="empty-state"><span class="empty-state-ico">😿</span><div>Нет котов с силой ${raid.minPow}+</div></div>`;}else{all.forEach(p=>{const el=document.createElement("div");el.className="modal-item";el.innerHTML=`<div class="modal-item-ico">${p.emoji}</div><div class="modal-item-body"><b>${petName(p)}</b><small>⚔️${petPower(p)} · Ур.${p.level||1}</small></div><span class="pill ${p.rarity}">${p.rarity}</span>`;el.onclick=()=>{list.querySelectorAll(".modal-item").forEach(e=>e.style.background='');el.style.background='rgba(255,159,10,.1)';selRaidPetUid=p.uid;document.getElementById("raid-m-go").disabled=false;};list.appendChild(el);});}document.getElementById("raid-m").classList.add("open");}
 function closeRaidM(){H('soft');document.getElementById("raid-m").classList.remove("open");}
-function confirmRaid(){if(!selRaidId||!selRaidPetUid)return;const raid=RAIDS.find(r=>r.id===selRaidId);if(!raid)return;let pet=findPet(selRaidPetUid);if(!pet)return;pet.inRaid=true;const now=Date.now();S.raids.push({uid:now+Math.random(),raidId:selRaidId,petUid:selRaidPetUid,petEmoji:pet.emoji,petName:petName(pet),startTime:now,endTime:now+raid.dur*1000,done:false,claimed:false});HN('success');toast(`${pet.emoji} → ${raid.name}!`);closeRaidM();save();renderRaids();}
-function claimRaid(raidUid){const r=S.raids.find(x=>x.uid==raidUid);if(!r||!r.done||r.claimed)return;const d=RAIDS.find(x=>x.id===r.raidId);if(!d)return;const luckLv=findPet(r.petUid)?.skills?.s_luck||0;const x2=luckLv>0&&Math.random()<luckLv*.04;const fish=Math.floor((d.fishR[0]+Math.random()*(d.fishR[1]-d.fishR[0]))*(x2?2:1));const coins=Math.floor((d.coinsR[0]+Math.random()*(d.coinsR[1]-d.coinsR[0]))*(x2?2:1));const gems=d.gem*(x2?2:1);S.fish+=fish;S.coins+=coins;S.gems+=gems;let pet=findPet(r.petUid);if(pet){pet.inRaid=false;pet.xp=(pet.xp||0)+Math.floor(d.xp*petSkillMult(pet,'xpBonus'));autoLevelUp(pet);}r.claimed=true;HN('success');toast(`🎉 +${fish}🐟 +${fmt(coins)}💰${gems?` +${gems}💎`:''}${x2?' ✨x2!':''}`);save();updHdr();renderRaids();}
+function confirmRaid(){if(!selRaidId||!selRaidPetUid)return;const raid=RAIDS.find(r=>r.id===selRaidId);if(!raid)return;let pet=findPet(selRaidPetUid);if(!pet)return;pet.inRaid=true;const now=Date.now();S.raids.push({uid:now+Math.random(),raidId:selRaidId,petUid:selRaidPetUid,petEmoji:pet.emoji,petName:petName(pet),startTime:now,endTime:now+raid.dur*1000,done:false,claimed:false});HN('success');toast(`${pet.emoji} → ${raid.name}!`);closeRaidM();save();renderBattle();}
+function claimRaid(raidUid){const r=S.raids.find(x=>x.uid==raidUid);if(!r||!r.done||r.claimed)return;const d=RAIDS.find(x=>x.id===r.raidId);if(!d)return;const luckLv=findPet(r.petUid)?.skills?.s_luck||0;const x2=luckLv>0&&Math.random()<luckLv*.04;const fish=Math.floor((d.fishR[0]+Math.random()*(d.fishR[1]-d.fishR[0]))*(x2?2:1));const coins=Math.floor((d.coinsR[0]+Math.random()*(d.coinsR[1]-d.coinsR[0]))*(x2?2:1));const gems=d.gem*(x2?2:1);S.fish+=fish;S.coins+=coins;S.gems+=gems;let pet=findPet(r.petUid);if(pet){pet.inRaid=false;pet.xp=(pet.xp||0)+Math.floor(d.xp*petSkillMult(pet,'xpBonus'));autoLevelUp(pet);}r.claimed=true;HN('success');toast(`🎉 +${fish}🐟 +${fmt(coins)}💰${gems?` +${gems}💎`:''}${x2?' ✨x2!':''}`);save();updHdr();renderBattle();}
 function findPet(uid){return S.inventory.find(p=>p.uid==uid)||S.cages.flatMap(c=>c.cats).find(p=>p.uid==uid)||null;}
 function autoLevelUp(pet){const lv=pet.level||1;if(lv>=MAX_LEVEL)return;if((pet.xp||0)>=lv*80){pet.level=lv+1;toast(`🎉 ${petName(pet)} → Ур.${pet.level}!`);}}
 
 /* ══ PVP ══ */
-function joinPvPQueue(){const all=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid);if(!all.length){toast("Нет котов!");return;}all.sort((a,b)=>petPower(b)-petPower(a));const best=all[0];H('heavy');if(!serverOnline){toast("⚠️ Нет соединения с сервером. PvP требует интернет.");return;}pvpQueueStatus='searching';pvpWaitSeconds=0;renderPvP();socket.emit('pvp_queue_join',{uid:MY_UID,name:MY_NAME,fighter:{emoji:best.emoji,name:petName(best),power:petPower(best),rarity:best.rarity}});toast("🔍 Ищем реального соперника...");}
-function leavePvPQueue(){pvpQueueStatus='idle';if(socket)socket.emit('pvp_queue_leave',{uid:MY_UID});renderPvP();}
+function joinPvPQueue(){const all=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid);if(!all.length){toast("Нет котов!");return;}all.sort((a,b)=>petPower(b)-petPower(a));const best=all[0];H('heavy');if(!serverOnline){toast("⚠️ Нет соединения с сервером. PvP требует интернет.");return;}pvpQueueStatus='searching';pvpWaitSeconds=0;battleTab='pvp';renderBattle();const myNick=S.profile?.nick||MY_NAME;socket.emit('pvp_queue_join',{uid:MY_UID,name:myNick,fighter:{emoji:best.emoji,name:petName(best),power:petPower(best),rarity:best.rarity}});toast("🔍 Ищем реального соперника...");}
+function leavePvPQueue(){pvpQueueStatus='idle';if(socket)socket.emit('pvp_queue_leave',{uid:MY_UID});renderBattle();}
 function offlinePvP(myPet){const BOTS=[{name:"КотоБот",emoji:"🤖",power:Math.floor(petPower(myPet)*(0.7+Math.random()*0.6))},{name:"МегаМурка",emoji:"😈",power:Math.floor(petPower(myPet)*(0.8+Math.random()*0.5))},{name:"ЗлойТигр",emoji:"🐯",power:Math.floor(petPower(myPet)*(0.9+Math.random()*0.4))}];const opp=BOTS[Math.floor(Math.random()*BOTS.length)];const botUid='bot_'+Date.now();processBattleResult({isBot:true,matchId:'local_'+Date.now(),result:simBattle(petPower(myPet),MY_UID,opp.power,botUid),you:{uid:MY_UID,fighter:{emoji:myPet.emoji,name:petName(myPet),power:petPower(myPet)},name:MY_NAME},opponent:{uid:botUid,fighter:opp,name:opp.name}});}
 function simBattle(p1,u1,p2,u2){let h1=p1*3+50,h2=p2*3+50;const log=[];let r=0;while(h1>0&&h2>0&&r<30){r++;const d1=Math.floor(p1*(0.6+Math.random()*.8)),d2=Math.floor(p2*(0.6+Math.random()*.8));h2-=d1;h1-=d2;if(r<=5)log.push({round:r,atk1:d1,atk2:d2,hp1:Math.max(0,h1),hp2:Math.max(0,h2),crit1:false,crit2:false});}return{winner:h1>0?u1:u2,log,hp1Final:Math.max(0,h1),hp2Final:Math.max(0,h2),rounds:r};}
 function processBattleResult(data){
@@ -974,23 +1009,25 @@ function processBattleResult(data){
   const myHp=won?Math.round(result.hp1Final/((you.fighter?.power||10)*3+50)*100):0;
   const oppHp=won?0:Math.round(result.hp2Final/((opponent.fighter?.power||10)*3+50)*100);
   const logH=result.log.map(r=>`Р${r.round}: ${you.fighter?.emoji||'😺'} −${r.atk1} | ${opponent.fighter?.emoji||'🤖'} −${r.atk2}`).join('\n');
+  const myNick=S.profile?.nick||you.name||'Вы';
+  const oppNick=opponent.name||'Соперник';
   document.getElementById('bov-content').innerHTML=`
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:36px">${won?'🏆':'😿'}</div>
       <div style="font-size:18px;font-weight:700;margin-top:6px">${won?'Победа!':'Поражение'}</div>
-      <div style="font-size:12px;color:var(--txt2);margin-top:3px">${won?`+${fmt(Math.floor((opponent.fighter?.power||10)*2+10))}💰 +${isBot?8:15} рейтинга`:'Прокачай кота!'}</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:3px">${won?`+${fmt(Math.floor((opponent.fighter?.power||10)*2+10))}💰 +${15} рейтинга`:'Прокачай кота!'}</div>
     </div>
     <div class="bov-fighters">
       <div class="bov-fighter ${won?'win':'lose'}">
-        <span class="bov-em">${you.fighter?.emoji||'😺'}</span>
-        <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${you.name||'Вы'}</div>
+        <span class="bov-em">${S.profile?.avatar||you.fighter?.emoji||'😺'}</span>
+        <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${myNick}</div>
         <div style="font-size:10px;color:var(--txt2)">⚔️${you.fighter?.power||0}</div>
         <div class="bov-hp"><div class="bov-hp-fill" style="width:${myHp}%;background:linear-gradient(90deg,var(--teal),var(--blue))"></div></div>
       </div>
       <div style="font-size:15px;font-weight:700;color:var(--txt3)">VS</div>
       <div class="bov-fighter ${won?'lose':'win'}">
         <span class="bov-em">${opponent.fighter?.emoji||'🤖'}</span>
-        <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${opponent.name||'Бот'}</div>
+        <div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${oppNick}</div>
         <div style="font-size:10px;color:var(--txt2)">⚔️${opponent.fighter?.power||0}</div>
         <div class="bov-hp"><div class="bov-hp-fill" style="width:${oppHp}%;background:linear-gradient(90deg,var(--red),var(--pink))"></div></div>
       </div>
@@ -1002,13 +1039,13 @@ function processBattleResult(data){
       <span style="color:var(--rl)">⭐ ${S.pvpScore}</span>
     </div>`;
   document.getElementById('bov').classList.add('vis');
-  if(cur===3)renderPvP();
+  if(cur===2)renderBattle();
 }
 function closeBov(){document.getElementById('bov').classList.remove('vis');}
 
 /* ══ NAV ══ */
 let cur=0;
-function go(i){H();cur=i;document.getElementById("car").style.transform=`translateX(-${i*(100/7)}%)`;document.querySelectorAll(".nb").forEach((b,j)=>b.classList.toggle("on",j===i));render();}
+function go(i){H();cur=i;document.getElementById("car").style.transform=`translateX(-${i*(100/6)}%)`;document.querySelectorAll(".nb").forEach((b,j)=>b.classList.toggle("on",j===i));render();}
 
 /* ══ TOAST ══ */
 let tT;function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(tT);tT=setTimeout(()=>el.classList.remove("show"),2500);}
@@ -1065,7 +1102,7 @@ function closeGov(){H('soft');document.getElementById("gov").classList.remove("v
 let PPR=null;
 function getPet(){if(!PPR)return null;return PPR.where==="inventory"?S.inventory[PPR.ci]:S.cages[PPR.ci]?.cats[PPR.xi]||null;}
 function openPet(where,ci,xi){H();const pet=where==="inventory"?S.inventory[ci]:S.cages[ci].cats[xi];if(!pet)return;PPR={where,ci,xi};renderPP(pet);document.getElementById("pet-page").classList.add("open");}
-function closePet(){H('soft');document.getElementById("pet-page").classList.remove("open");PPR=null;if(cur===0||cur===6)render();}
+function closePet(){H('soft');document.getElementById("pet-page").classList.remove("open");PPR=null;if(cur===0||cur===5)render();}
 function renderPP(pet){
   if(!pet)return;
   document.getElementById("pp-ttl").textContent=petName(pet);
@@ -1150,7 +1187,7 @@ function sellGear(iid){const idx=S.gearInv.findIndex(g=>g.iid==iid);if(idx===-1)
 function buyCage(id){const tpl=CAGES.find(c=>c.id===id);if(!tpl)return;if(S.coins<tpl.price){toast(`Нужно ${fmt(tpl.price)}💰`);HN('error');return;}S.coins-=tpl.price;S.cages.push({...tpl,cats:[]});HN('success');toast(`${tpl.emoji} ${tpl.name} куплена!`);save();render();}
 
 /* ══ RENDER ══ */
-function render(){if(!S)return;tick();updHdr();renderHome();renderGacha();renderRaids();renderPvP();renderLB();renderShop();renderInventory();}
+function render(){if(!S)return;tick();updHdr();renderHome();renderGacha();renderBattle();renderLB();renderShop();renderInventory();}
 
 function renderHome(){
   const co=totalCoins(),fi=totalFish();
@@ -1230,50 +1267,12 @@ function renderGacha(){
   document.getElementById("s1").innerHTML=h;
 }
 
-function renderRaids(){
-  const now=Date.now(),allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)],maxPow=allPets.reduce((m,p)=>Math.max(m,petPower(p)),0);
-  const active=S.raids.filter(r=>!r.claimed);
-  let h=`<div class="raid-hero"><div style="font-size:15px;font-weight:700">⚔️ Зоны рейдов</div><div class="raid-power">Твоя макс. сила: ⚔️${maxPow}</div></div>`;
-  if(active.length){h+=`<div class="section-title">Активные (${active.length})</div>`;active.forEach(r=>{const d=RAIDS.find(x=>x.id===r.raidId)||{};const left=r.endTime-now;const pct=Math.min(100,Math.max(0,Math.round((1-left/(r.endTime-r.startTime))*100)));h+=`<div class="active-raid"><div class="active-raid-top"><div class="active-raid-info"><span style="font-size:24px">${r.petEmoji}</span><div><div style="font-size:14px;font-weight:600">${r.petName}</div><div style="font-size:11px;color:var(--txt2)">${d.emoji||''} ${d.name||r.raidId}</div></div></div>${r.done?`<button class="ios-btn teal" style="width:auto;padding:8px 16px;margin:0;font-size:13px" onclick="claimRaid(${r.uid})">Забрать!</button>`:`<div style="font-size:13px;font-weight:700;color:var(--orange)">${fmtLeft(left)}</div>`}</div><div class="raid-prog-bar"><div class="raid-prog-fill" style="width:${pct}%"></div></div>${r.done?`<div style="font-size:11px;color:var(--teal);margin-top:5px">✅ Завершён!</div>`:''}</div>`;});}
-  h+=`<div class="section-title">Зоны</div><div class="raid-zones-grid">`;
-  RAIDS.forEach(raid=>{const locked=maxPow<raid.minPow;const inProg=S.raids.some(r=>r.raidId===raid.id&&!r.claimed&&!r.done);h+=`<div class="raid-zone ${locked?'locked':''}" style="--zb:${raid.zb}" onclick="${locked||inProg?'':('openRaidModal(\''+raid.id+'\')')}"><span class="rz-ico">${raid.emoji}</span><div class="rz-name">${raid.name}</div><div class="rz-meta">⚔️${raid.minPow} · ⏱${fmtT(raid.dur)}</div><div class="rz-reward">🐟${raid.fishR[0]}-${raid.fishR[1]}${raid.gem?` · 💎${raid.gem}`:''}</div>${locked?`<div class="rz-lock">🔒 Нужно ⚔️${raid.minPow}</div>`:inProg?`<div style="font-size:10px;color:var(--orange);margin-top:5px;font-weight:600">⏳ В процессе</div>`:`<div style="font-size:10px;color:var(--blue);margin-top:5px;font-weight:600">⚔️ Начать</div>`}</div>`;});
-  h+=`</div>`;document.getElementById("s2").innerHTML=h;
-}
-
-function renderPvP(){
-  const allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid);
-  const best=allPets.sort((a,b)=>petPower(b)-petPower(a))[0];
-  let h=`<div class="pvp-hero"><div style="font-size:15px;font-weight:700;margin-bottom:10px">🥊 PvP Арена</div>
-    <div class="pvp-status-row"><div class="pvp-dot ${pvpQueueStatus}"></div>
-      <div><div style="font-size:14px;font-weight:600">${pvpQueueStatus==='searching'?'Поиск соперника...':'Готово к бою'}</div>
-      <div style="font-size:11px;color:var(--txt2)">${serverOnline?'🟢 Реальные игроки':'⚪ Только боты'}</div></div>
-    </div>`;
-  if(pvpQueueStatus==='searching'){const wt=pvpWaitSeconds>0?`<div style="font-size:11px;color:var(--txt3);margin-top:4px">Ожидание: ${pvpWaitSeconds}с</div>`:'';h+=`<div class="pvp-queue-anim"><div style="font-size:14px;color:var(--txt2)">Ищем живого соперника</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">👤 Только реальные игроки</div><div class="pvp-dots"><span></span><span></span><span></span></div>${wt}</div><button class="ios-btn red" onclick="leavePvPQueue()">Отменить</button>`;}
-  else{h+=`<div class="stat-grid" style="margin-bottom:10px"><div class="stat-card"><span class="stat-val" style="color:var(--teal)">${S.pvpWins}</span><div class="stat-lbl">Победы</div></div><div class="stat-card"><span class="stat-val" style="color:var(--red)">${S.pvpLosses}</span><div class="stat-lbl">Поражения</div></div><div class="stat-card"><span class="stat-val" style="color:var(--rl)">${S.pvpScore}</span><div class="stat-lbl">Рейтинг</div></div></div>`;
-  if(best){h+=`<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px"><div class="fighter-card"><span class="fighter-em">${best.emoji}</span><div class="fighter-name">${petName(best)}</div><div class="fighter-power">⚔️${petPower(best)} · Ур.${best.level||1}</div></div><div style="font-size:18px;font-weight:700;color:var(--txt3);text-align:center">VS</div><div class="fighter-card" style="opacity:.4"><span class="fighter-em">❓</span><div class="fighter-name">Соперник</div><div class="fighter-power">???</div></div></div><button class="ios-btn pink" onclick="joinPvPQueue()" style="font-size:16px;padding:16px">⚔️ ${serverOnline?'Найти соперника':'Бой с ботом'}</button>`;}
-  else{h+=`<div class="empty-state"><span class="empty-state-ico">😿</span><div class="empty-state-txt">Нет котов для боя</div></div>`;}}
-  h+=`</div>`;
-  const wr=S.pvpWins+S.pvpLosses>0?Math.round(S.pvpWins/(S.pvpWins+S.pvpLosses)*100):0;
-  h+=`<div class="section-title">Статистика</div><div class="stat-grid"><div class="stat-card"><span class="stat-val">${wr}%</span><div class="stat-lbl">Винрейт</div></div><div class="stat-card"><span class="stat-val" style="color:var(--rl)">${S.pvpScore}</span><div class="stat-lbl">Рейтинг</div></div><div class="stat-card"><span class="stat-val">${S.pvpWins+S.pvpLosses}</span><div class="stat-lbl">Всего боёв</div></div></div>`;
-  document.getElementById("s3").innerHTML=h;
-}
-
-function renderLB(){
-  const medals=["🥇","🥈","🥉"];const lc=["#FF9F0A","#8E8E93","#CD7F32","#32D2F3","#BF5AF2"];
-  let h=`<div class="lb-hero"><div style="font-size:32px">🏆</div><div style="font-size:17px;font-weight:700;margin-top:4px">Таблица лидеров</div><div style="font-size:12px;color:var(--txt2);margin-top:3px">${serverOnline?'👤 Только реальные игроки':'⚪ Требуется подключение'}</div></div>`;
-  const myIdx=lbData.findIndex(p=>p.uid===MY_UID);
-  if(myIdx===-1||myIdx>9){h+=`<div class="lb-row me"><div class="lb-rank">#${myIdx===-1?lbData.length+1:myIdx+1}</div><div class="lb-emoji">😺</div><div class="lb-info"><div class="lb-name">${MY_NAME} (Вы)</div><div class="lb-sub">Победы: ${S.pvpWins} · Рейтинг: ${S.pvpScore}</div></div><div class="lb-score">${S.pvpScore}</div></div>`;}
-  if(!lbData.length){h+=`<div class="empty-state"><span class="empty-state-ico">⏳</span><div>Загрузка рейтинга...</div></div>`;}
-  else{lbData.slice(0,50).forEach((p,i)=>{const isMe=p.uid===MY_UID;const now=Date.now();const onlineRecently=p.lastSeen&&(now-p.lastSeen<5*60*1000);const onlineDot=onlineRecently?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:4px;vertical-align:middle"></span>`:'';h+=`<div class="lb-row ${isMe?'me':''}" style="--lc:${lc[Math.min(i,lc.length-1)]}"><div class="lb-rank">${medals[i]||'#'+(i+1)}</div><div class="lb-emoji">${p.emoji||'😺'}</div><div class="lb-info"><div class="lb-name">${onlineDot}${p.name||'Игрок'}${isMe?' (Вы)':''}</div><div class="lb-sub">🏆 ${p.pvpWins||0} · Ур.${p.level||1} · ${p.topRarity||'Common'}</div></div><div class="lb-score">${p.pvpScore||0}</div></div>`;});}
-  document.getElementById("s4").innerHTML=h;
-}
-
 function renderShop(){
   const cc={};S.cages.forEach(c=>{cc[c.id]=(cc[c.id]||0)+1;});
   const RC3={Common:"#8E8E93",Rare:"#32D2F3",Epic:"#BF5AF2",Legendary:"#FF9F0A",Mythic:"#FF453A"};
   let h=`<div class="section-title">Клетки</div>`;
   h+=CAGES.map(cage=>{const cnt=cc[cage.id]||0,ok=S.coins>=cage.price;return`<div class="shop-card"><div class="shop-cage-header"><div class="shop-cage-ico">${cage.emoji}</div><div><div style="font-size:16px;font-weight:700">${cage.name} <span class="pill ${cage.rarity}">${cage.rarity}</span></div><div style="font-size:12px;color:var(--txt2);margin-top:2px">${cnt?`✓ Куплено: ${cnt}`:''}</div></div></div><div class="shop-stats"><div class="shop-stat"><span class="shop-stat-v">${cage.slots}</span><div class="shop-stat-l">Слотов</div></div><div class="shop-stat"><span class="shop-stat-v">×${cage.bonus.toFixed(1)}</span><div class="shop-stat-l">Бонус</div></div><div class="shop-stat"><span class="shop-stat-v" style="font-size:10px;line-height:1.4">${cage.allowed.slice(0,3).join(", ")}</span><div class="shop-stat-l">Коты</div></div></div>${cage.price===0?`<button class="ios-btn gray" disabled>Стартовая (бесплатно)</button>`:`<button class="ios-btn ${ok?'':'gray'}" onclick="buyCage('${cage.id}')">${ok?'🛒 Купить':'🔒'} ${fmt(cage.price)}💰${cnt?' (ещё)':''}</button>`}</div>`;}).join("");
-  document.getElementById("s5").innerHTML=h;
+  document.getElementById("s4").innerHTML=h;
 }
 
 function renderInventory(){
@@ -1290,16 +1289,271 @@ function renderInventory(){
     S.gearInv.forEach(g=>{h+=`<div class="inv-item" style="--ic:${RC3[g.rarity]}"><div class="inv-ico">${g.emoji}</div><div class="inv-info"><div class="inv-name">${g.name}</div><div class="inv-meta"><span class="pill ${g.rarity}">${g.rarity}</span><span style="font-size:10px;color:var(--teal)">+${Math.round(g.bonus*100)}%</span><span style="font-size:10px;color:var(--txt2)">⚔️+${g.power||0}</span></div></div><div class="inv-actions" onclick="event.stopPropagation()"><button class="inv-btn-sell" data-iid="${g.iid}" onclick="sellGear(this.dataset.iid)">💰${g.sell}</button></div></div>`;});
   }
   if(!S.inventory.length&&!S.gearInv.length){h=`<div class="empty-state"><span class="empty-state-ico">📦</span><div class="empty-state-txt">Инвентарь пуст<br>Покрути гачу!</div></div>`;}
-  document.getElementById("s6").innerHTML=h;
+  document.getElementById("s5").innerHTML=h;
 }
+
+/* ══ BATTLE SCREEN (Raids + PvP tabs) ══ */
+let battleTab='raids'; // 'raids' | 'pvp'
+function setBattleTab(t){battleTab=t;H('soft');renderBattle();}
+function renderBattle(){
+  const raidDone=S.raids.filter(r=>r.done&&!r.claimed).length>0;
+  const h=`<div class="inner-tabs">
+    <button class="inner-tab ${battleTab==='raids'?'on':''}" onclick="setBattleTab('raids')">⚔️ Рейды<span class="tab-dot ${raidDone?'show':''}"></span></button>
+    <button class="inner-tab ${battleTab==='pvp'?'on':''}" onclick="setBattleTab('pvp')">🥊 PvP<span class="tab-dot ${pvpQueueStatus==='searching'?'show':''}"></span></button>
+  </div>`;
+  document.getElementById("s2").innerHTML=h+(battleTab==='raids'?getRaidsHTML():getPvPHTML());
+}
+function getRaidsHTML(){
+  const now=Date.now(),allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)],maxPow=allPets.reduce((m,p)=>Math.max(m,petPower(p)),0);
+  const active=S.raids.filter(r=>!r.claimed);
+  let h=`<div class="raid-hero"><div style="font-size:15px;font-weight:700">⚔️ Зоны рейдов</div><div class="raid-power">Твоя макс. сила: ⚔️${maxPow}</div></div>`;
+  if(active.length){h+=`<div class="section-title">Активные (${active.length})</div>`;active.forEach(r=>{const d=RAIDS.find(x=>x.id===r.raidId)||{};const left=r.endTime-now;const pct=Math.min(100,Math.max(0,Math.round((1-left/(r.endTime-r.startTime))*100)));h+=`<div class="active-raid"><div class="active-raid-top"><div class="active-raid-info"><span style="font-size:24px">${r.petEmoji}</span><div><div style="font-size:14px;font-weight:600">${r.petName}</div><div style="font-size:11px;color:var(--txt2)">${d.emoji||''} ${d.name||r.raidId}</div></div></div>${r.done?`<button class="ios-btn teal" style="width:auto;padding:8px 16px;margin:0;font-size:13px" onclick="claimRaid(${r.uid})">Забрать!</button>`:`<div style="font-size:13px;font-weight:700;color:var(--orange)">${fmtLeft(left)}</div>`}</div><div class="raid-prog-bar"><div class="raid-prog-fill" style="width:${pct}%"></div></div>${r.done?`<div style="font-size:11px;color:var(--teal);margin-top:5px">✅ Завершён!</div>`:''}</div>`;});}
+  h+=`<div class="section-title">Зоны</div><div class="raid-zones-grid">`;
+  RAIDS.forEach(raid=>{const locked=maxPow<raid.minPow;const inProg=S.raids.some(r=>r.raidId===raid.id&&!r.claimed&&!r.done);h+=`<div class="raid-zone ${locked?'locked':''}" style="--zb:${raid.zb}" onclick="${locked||inProg?'':('openRaidModal(\''+raid.id+'\')')}"><span class="rz-ico">${raid.emoji}</span><div class="rz-name">${raid.name}</div><div class="rz-meta">⚔️${raid.minPow} · ⏱${fmtT(raid.dur)}</div><div class="rz-reward">🐟${raid.fishR[0]}-${raid.fishR[1]}${raid.gem?` · 💎${raid.gem}`:''}</div>${locked?`<div class="rz-lock">🔒 Нужно ⚔️${raid.minPow}</div>`:inProg?`<div style="font-size:10px;color:var(--orange);margin-top:5px;font-weight:600">⏳ В процессе</div>`:`<div style="font-size:10px;color:var(--blue);margin-top:5px;font-weight:600">⚔️ Начать</div>`}</div>`;});
+  h+=`</div>`;return h;
+}
+function getPvPHTML(){
+  const allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid);
+  const best=allPets.sort((a,b)=>petPower(b)-petPower(a))[0];
+  let h=`<div class="pvp-hero"><div style="font-size:15px;font-weight:700;margin-bottom:10px">🥊 PvP Арена</div>
+    <div class="pvp-status-row"><div class="pvp-dot ${pvpQueueStatus}"></div>
+      <div><div style="font-size:14px;font-weight:600">${pvpQueueStatus==='searching'?'Поиск соперника...':'Готово к бою'}</div>
+      <div style="font-size:11px;color:var(--txt2)">${serverOnline?'🟢 Только реальные игроки':'⚪ Нет связи'}</div></div>
+    </div>`;
+  if(pvpQueueStatus==='searching'){const wt=pvpWaitSeconds>0?`<div style="font-size:11px;color:var(--txt3);margin-top:4px">Ожидание: ${pvpWaitSeconds}с · В очереди: ${pvpQueueSize}</div>`:'';h+=`<div class="pvp-queue-anim"><div style="font-size:14px;color:var(--txt2)">Ищем живого соперника</div><div style="font-size:11px;color:var(--txt3);margin-top:2px">👤 Только реальные игроки</div><div class="pvp-dots"><span></span><span></span><span></span></div>${wt}</div><button class="ios-btn red" onclick="leavePvPQueue()">Отменить</button>`;}
+  else{
+    h+=`<div class="stat-grid" style="margin-bottom:10px"><div class="stat-card"><span class="stat-val" style="color:var(--teal)">${S.pvpWins}</span><div class="stat-lbl">Победы</div></div><div class="stat-card"><span class="stat-val" style="color:var(--red)">${S.pvpLosses}</span><div class="stat-lbl">Поражения</div></div><div class="stat-card"><span class="stat-val" style="color:var(--rl)">${S.pvpScore}</span><div class="stat-lbl">Рейтинг</div></div></div>`;
+    if(best){
+      const myNick=S.profile?.nick||MY_NAME;
+      h+=`<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px"><div class="fighter-card"><span class="fighter-em">${S.profile?.avatar||best.emoji}</span><div class="fighter-name">${myNick}</div><div class="fighter-power">⚔️${petPower(best)} · Ур.${best.level||1}</div></div><div style="font-size:18px;font-weight:700;color:var(--txt3);text-align:center">VS</div><div class="fighter-card" style="opacity:.4"><span class="fighter-em">❓</span><div class="fighter-name">Соперник</div><div class="fighter-power">???</div></div></div><button class="ios-btn pink" onclick="joinPvPQueue()" style="font-size:16px;padding:16px">⚔️ Найти соперника</button>`;
+    }else{h+=`<div class="empty-state"><span class="empty-state-ico">😿</span><div class="empty-state-txt">Нет котов для боя</div></div>`;}
+  }
+  h+=`</div>`;
+  const wr=S.pvpWins+S.pvpLosses>0?Math.round(S.pvpWins/(S.pvpWins+S.pvpLosses)*100):0;
+  h+=`<div class="section-title">Статистика</div><div class="stat-grid"><div class="stat-card"><span class="stat-val">${wr}%</span><div class="stat-lbl">Винрейт</div></div><div class="stat-card"><span class="stat-val" style="color:var(--rl)">${S.pvpScore}</span><div class="stat-lbl">Рейтинг</div></div><div class="stat-card"><span class="stat-val">${S.pvpWins+S.pvpLosses}</span><div class="stat-lbl">Всего боёв</div></div></div>`;
+  return h;
+}
+
+/* ══ TOP SCREEN (Leaderboard + realtime) ══ */
+function renderLB(){
+  const medals=["🥇","🥈","🥉"];const lc=["#FF9F0A","#8E8E93","#CD7F32","#32D2F3","#BF5AF2"];
+  const now=Date.now();
+  let h=`<div class="lb-hero">
+    <div style="font-size:32px">🏆</div>
+    <div style="font-size:17px;font-weight:700;margin-top:4px">Таблица лидеров</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:3px">
+      ${serverOnline?'<span class="lb-live">● LIVE</span><span style="font-size:11px;color:var(--txt2)">Только реальные игроки</span>':'<span style="font-size:11px;color:var(--txt3)">⚪ Офлайн</span>'}
+    </div>
+  </div>`;
+  const myIdx=lbData.findIndex(p=>p.uid===MY_UID);
+  if(myIdx===-1||myIdx>9){
+    const myAvatar=S.profile?.avatar||'😺';
+    const myNick=S.profile?.nick||MY_NAME;
+    h+=`<div class="lb-row me" onclick="openProfile()"><div class="lb-rank">#${myIdx===-1?lbData.length+1:myIdx+1}</div><div class="lb-emoji">${myAvatar}</div><div class="lb-info"><div class="lb-name">${myNick} (Вы)</div><div class="lb-sub">🏆 ${S.pvpWins} · Рейтинг: ${S.pvpScore}</div></div><div class="lb-score">${S.pvpScore}</div></div>`;
+  }
+  if(!lbData.length){h+=`<div class="empty-state"><span class="empty-state-ico">⏳</span><div>Загрузка рейтинга...</div></div>`;}
+  else{
+    lbData.slice(0,50).forEach((p,i)=>{
+      const isMe=p.uid===MY_UID;
+      const onlineRecently=p.lastSeen&&(now-p.lastSeen<5*60*1000);
+      const onlineDot=onlineRecently?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:4px;vertical-align:middle"></span>`:'';
+      const dispName=isMe?(S.profile?.nick||p.name||MY_NAME):p.name||'Игрок';
+      const dispEmoji=isMe?(S.profile?.avatar||p.emoji||'😺'):(p.avatar||p.emoji||'😺');
+      h+=`<div class="lb-row ${isMe?'me':''}" style="--lc:${lc[Math.min(i,lc.length-1)]}" onclick="${isMe?'openProfile()':('openPlayerModal(\''+p.uid+'\')')}">
+        <div class="lb-rank">${medals[i]||'#'+(i+1)}</div>
+        <div class="lb-emoji">${dispEmoji}</div>
+        <div class="lb-info">
+          <div class="lb-name">${onlineDot}${dispName}${isMe?' (Вы)':''}</div>
+          <div class="lb-sub">🏆 ${p.pvpWins||0} победы · Ур.${p.level||1} · ${p.topRarity||'Common'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="lb-score">${p.pvpScore||0}</div>
+          ${onlineRecently?'<div style="font-size:9px;color:var(--teal)">онлайн</div>':''}
+        </div>
+      </div>`;
+    });
+  }
+  document.getElementById("s3").innerHTML=h;
+}
+
+/* ══ PLAYER MODAL (tap on leaderboard row) ══ */
+function openPlayerModal(uid){
+  const p=lbData.find(x=>x.uid===uid);if(!p)return;
+  H('light');
+  const now=Date.now();
+  const online=p.lastSeen&&(now-p.lastSeen<5*60*1000);
+  const wr=p.pvpWins+p.pvpLosses>0?Math.round(p.pvpWins/(p.pvpWins+p.pvpLosses)*100):0;
+  const lastSeen=p.lastSeen?fmtAgo(now-p.lastSeen):'неизвестно';
+  document.getElementById('player-modal-content').innerHTML=`
+    <div style="text-align:center;padding:16px 0">
+      <div style="font-size:56px;margin-bottom:8px">${p.avatar||p.emoji||'😺'}</div>
+      <div style="font-size:20px;font-weight:700">${p.name||'Игрок'}</div>
+      <div style="font-size:12px;color:${online?'var(--teal)':'var(--txt3)'};margin-top:4px">${online?'🟢 Онлайн':'⏱ Был '+lastSeen}</div>
+    </div>
+    <div class="stat-grid" style="margin-bottom:12px">
+      <div class="stat-card"><span class="stat-val" style="color:var(--rl)">${p.pvpScore||0}</span><div class="stat-lbl">Рейтинг</div></div>
+      <div class="stat-card"><span class="stat-val" style="color:var(--teal)">${p.pvpWins||0}</span><div class="stat-lbl">Победы</div></div>
+      <div class="stat-card"><span class="stat-val">${wr}%</span><div class="stat-lbl">Винрейт</div></div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-val">${p.level||1}</span><div class="stat-lbl">Ур. кота</div></div>
+      <div class="stat-card"><span class="stat-val"><span class="pill ${p.topRarity||'Common'}" style="font-size:9px">${p.topRarity||'Common'}</span></span><div class="stat-lbl">Редкость</div></div>
+      <div class="stat-card"><span class="stat-val">⚔️${p.maxPower||0}</span><div class="stat-lbl">Макс. сила</div></div>
+    </div>`;
+  document.getElementById('player-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('player-modal').style.animation='modal-in .2s ease',0);
+}
+function closePlayerModal(){document.getElementById('player-modal').style.display='none';}
+function fmtAgo(ms){if(ms<60000)return'только что';if(ms<3600000)return Math.floor(ms/60000)+'мин назад';if(ms<86400000)return Math.floor(ms/3600000)+'ч назад';return Math.floor(ms/86400000)+'д назад';}
+
+/* ══ PROFILE ══ */
+const AVATARS=['😺','😸','😼','🙀','😿','🦁','🐯','🐆','🦝','🐈‍⬛','🦊','🐉','🦄','👾','🌙','☀️','💀','🌌','🐱','🐻','🐼','🦊','🐺','🦋','🌟','⚡','🔥','💎'];
+function openProfile(){
+  H('light');
+  const prof=S.profile||{};
+  const nick=prof.nick||MY_NAME;
+  const avatar=prof.avatar||'😺';
+  document.getElementById('profile-av-display').textContent=avatar;
+  document.getElementById('profile-name-display').textContent=nick;
+  document.getElementById('profile-uid-display').textContent='ID: '+MY_UID.slice(0,12)+'...';
+  document.getElementById('nick-input').value=nick;
+  document.getElementById('prof-wins').textContent=S.pvpWins||0;
+  document.getElementById('prof-score').textContent=S.pvpScore||0;
+  const allCats=[...S.inventory,...S.cages.flatMap(c=>c.cats)];
+  document.getElementById('prof-cats').textContent=allCats.length;
+  // Best cat
+  const bestCatUid=prof.bestCatUid;
+  const bestCat=bestCatUid?allCats.find(p=>p.uid==bestCatUid):allCats.sort((a,b)=>petPower(b)-petPower(a))[0];
+  if(bestCat){
+    document.getElementById('profile-best-em').textContent=bestCat.emoji;
+    document.getElementById('profile-best-name').textContent=petName(bestCat);
+    document.getElementById('profile-best-stats').textContent=`⚔️${petPower(bestCat)} · Ур.${bestCat.level||1} · ${bestCat.rarity}`;
+  }
+  // Avatar grid
+  const ag=document.getElementById('avatar-grid');
+  ag.innerHTML=AVATARS.map(a=>`<div class="av-opt ${a===avatar?'sel':''}" onclick="selectAvatar('${a}')">${a}</div>`).join('');
+  document.getElementById('avatar-picker').style.display='none';
+  document.getElementById('profile-modal').classList.add('open');
+}
+function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
+function toggleAvatarPicker(){
+  const p=document.getElementById('avatar-picker');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+function selectAvatar(a){
+  H('light');
+  if(!S.profile)S.profile={};
+  S.profile.avatar=a;
+  document.getElementById('profile-av-display').textContent=a;
+  document.getElementById('hdr-avatar').textContent=a;
+  document.querySelectorAll('.av-opt').forEach(el=>el.classList.toggle('sel',el.textContent===a));
+  save();syncToServer();toast('✅ Аватарка сохранена!');
+}
+function saveNick(){
+  const v=document.getElementById('nick-input').value.trim();
+  if(!v){toast('Введи никнейм!');return;}
+  if(v.length<2){toast('Минимум 2 символа');return;}
+  if(!S.profile)S.profile={};
+  S.profile.nick=v;
+  document.getElementById('profile-name-display').textContent=v;
+  H('medium');save();syncToServer();toast('✅ Никнейм сохранён!');
+}
+function pickBestCat(){
+  const allCats=[...S.inventory,...S.cages.flatMap(c=>c.cats)];
+  if(!allCats.length){toast('Нет котов!');return;}
+  allCats.sort((a,b)=>petPower(b)-petPower(a));
+  const list=document.getElementById('best-cat-list');
+  list.innerHTML=allCats.map(p=>`<div class="modal-item" onclick="setBestCat('${p.uid}')">
+    <div class="modal-item-ico">${p.emoji}</div>
+    <div class="modal-item-body"><b>${petName(p)}</b><small>⚔️${petPower(p)} · Ур.${p.level||1} · ${p.rarity}</small></div>
+    <span class="pill ${p.rarity}">${p.rarity}</span>
+  </div>`).join('');
+  document.getElementById('best-cat-modal').style.display='flex';
+}
+function setBestCat(uid){
+  if(!S.profile)S.profile={};
+  S.profile.bestCatUid=uid;
+  closeBestCatModal();
+  const p=findPet(uid);
+  if(p){
+    document.getElementById('profile-best-em').textContent=p.emoji;
+    document.getElementById('profile-best-name').textContent=petName(p);
+    document.getElementById('profile-best-stats').textContent=`⚔️${petPower(p)} · Ур.${p.level||1} · ${p.rarity}`;
+    toast(`${p.emoji} Лучший кот выбран!`);
+  }
+  save();syncToServer();
+}
+function closeBestCatModal(){document.getElementById('best-cat-modal').style.display='none';}
+
+/* ══ NAV ══ */
+let cur=0;
+function go(i){H();cur=i;document.getElementById("car").style.transform=`translateX(-${i*(100/6)}%)`;document.querySelectorAll(".nb").forEach((b,j)=>b.classList.toggle("on",j===i));render();}
+
+/* ══ TOAST ══ */
+let tT;function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(tT);tT=setTimeout(()=>el.classList.remove("show"),2500);}
 
 /* ══ SWIPE ══ */
 let sx=0,sy=0;
 document.body.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
-document.body.addEventListener("touchend",e=>{if(document.getElementById("pet-page").classList.contains("open"))return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>54&&Math.abs(dx)>Math.abs(dy)*1.4){if(dx<0&&cur<6)go(cur+1);if(dx>0&&cur>0)go(cur-1);}},{passive:true});
+document.body.addEventListener("touchend",e=>{if(document.getElementById("pet-page").classList.contains("open"))return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>54&&Math.abs(dx)>Math.abs(dy)*1.4){if(dx<0&&cur<5)go(cur+1);if(dx>0&&cur>0)go(cur-1);}},{passive:true});
 
 /* ══ START ══ */
 cloudLoad(d=>boot(d));
 </script>
+
+<!-- PROFILE MODAL -->
+<div id="profile-modal" onclick="closeProfile()">
+  <div class="profile-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="profile-avatar-row">
+      <div class="profile-avatar" id="profile-av-display" onclick="toggleAvatarPicker()">😺</div>
+      <div class="profile-name" id="profile-name-display">Игрок</div>
+      <div class="profile-uid" id="profile-uid-display"></div>
+    </div>
+    <div id="avatar-picker" style="display:none">
+      <div class="section-title">Выбери аватарку</div>
+      <div class="avatar-grid" id="avatar-grid"></div>
+    </div>
+    <div class="section-title">Никнейм</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input class="modal-inp" id="nick-input" placeholder="Введи никнейм..." maxlength="20" style="margin:0;flex:1" />
+      <button class="ios-btn" onclick="saveNick()" style="width:auto;padding:12px 18px;margin:0">💾</button>
+    </div>
+    <div class="section-title">Лучший кот</div>
+    <div class="profile-best-cat" id="profile-best-cat-row" onclick="pickBestCat()">
+      <span id="profile-best-em" style="font-size:36px">😺</span>
+      <div style="flex:1"><div id="profile-best-name" style="font-size:15px;font-weight:700">Не выбран</div><div id="profile-best-stats" style="font-size:12px;color:var(--txt2);margin-top:2px"></div></div>
+      <span style="color:var(--txt3);font-size:18px">›</span>
+    </div>
+    <div class="section-title">Статистика</div>
+    <div class="stat-grid" style="margin-bottom:14px">
+      <div class="stat-card"><span class="stat-val" id="prof-wins" style="color:var(--teal)">0</span><div class="stat-lbl">Побед PvP</div></div>
+      <div class="stat-card"><span class="stat-val" id="prof-score" style="color:var(--rl)">0</span><div class="stat-lbl">Рейтинг</div></div>
+      <div class="stat-card"><span class="stat-val" id="prof-cats">0</span><div class="stat-lbl">Котов</div></div>
+    </div>
+    <button class="ios-btn red" onclick="closeProfile()">Закрыть</button>
+  </div>
+</div>
+
+<!-- PLAYER DETAIL MODAL -->
+<div id="player-modal" onclick="closePlayerModal()" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end">
+  <div class="lb-player-modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="player-modal-content"></div>
+    <button class="ios-btn gray" onclick="closePlayerModal()" style="margin-top:8px">Закрыть</button>
+  </div>
+</div>
+
+<!-- BEST CAT PICKER -->
+<div id="best-cat-modal" onclick="closeBestCatModal()" style="display:none;position:fixed;inset:0;z-index:510;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:flex-end">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Лучший кот профиля</div>
+    <div class="modal-sub">Будет виден всем в топе</div>
+    <div id="best-cat-list"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
 </body>
 </html>
