@@ -15,7 +15,7 @@
 body{
   background:linear-gradient(180deg,
     var(--tg-theme-bg-color),
-    rgba(0,0,0,0.03));
+    rgba(0,0,0,0.04));
   color:var(--tg-theme-text-color);
   font-family:Inter,Arial,sans-serif;
   margin:0;
@@ -32,7 +32,7 @@ h1,h2{text-align:center;margin:10px 0;}
 
 .card{
   background:var(--tg-theme-secondary-bg-color,#1f1f1f);
-  border-radius:18px;
+  border-radius:20px;
   padding:14px;
   margin:12px 0;
   box-shadow:0 8px 20px rgba(0,0,0,.15);
@@ -42,7 +42,7 @@ button{
   width:100%;
   padding:14px;
   border:none;
-  border-radius:20px;
+  border-radius:22px;
   font-size:16px;
   font-weight:600;
   margin-top:8px;
@@ -53,10 +53,6 @@ button{
 
 button.secondary{
   background:linear-gradient(135deg,#666,#999);
-}
-
-button.danger{
-  background:linear-gradient(135deg,var(--danger),#ff9a9a);
 }
 
 .small{opacity:.7;font-size:14px;}
@@ -87,9 +83,7 @@ th,td{
   padding:10px;
   text-align:center;
 }
-th{
-  opacity:.7;
-}
+th{opacity:.7;}
 tr{
   border-bottom:1px solid rgba(255,255,255,.1);
 }
@@ -146,19 +140,24 @@ tr{
 </div>
 
 <script>
-const tg=window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
 tg.expand();
 
+/* === КОТЫ === */
 const cats=[
  {name:"Обычный кот",income:1,rarity:"Common"},
  {name:"Полосатый кот",income:2,rarity:"Common"},
  {name:"Чёрный кот",income:3,rarity:"Uncommon"},
+ {name:"Белый кот",income:4,rarity:"Uncommon"},
  {name:"Самурай кот",income:6,rarity:"Rare"},
+ {name:"Пират кот",income:7,rarity:"Rare"},
  {name:"Кибер кот",income:10,rarity:"Epic"},
- {name:"Дракон кот",income:18,rarity:"Legendary"},
- {name:"Божий кот",income:30,rarity:"Mythic"},
+ {name:"Маг кот",income:14,rarity:"Epic"},
+ {name:"Дракон кот",income:20,rarity:"Legendary"},
+ {name:"Божий кот",income:35,rarity:"Mythic"},
 ];
 
+/* === КЛЕТКИ === */
 const cageTypes=[
  {emoji:"🪵",name:"Деревянная",slots:2,price:100,allowed:["Common"]},
  {emoji:"🔩",name:"Железная",slots:3,price:300,allowed:["Common","Uncommon"]},
@@ -167,7 +166,8 @@ const cageTypes=[
  {emoji:"🌌",name:"Божественная",slots:1,price:3000,allowed:["Mythic"]},
 ];
 
-let data=JSON.parse(localStorage.getItem("gacha"))||{
+/* === СОХРАНЕНИЕ === */
+let data = JSON.parse(localStorage.getItem("gacha")) || {
  coins:300,
  inventory:[],
  cages:[],
@@ -175,9 +175,11 @@ let data=JSON.parse(localStorage.getItem("gacha"))||{
  last:Date.now()
 };
 
-function save(){localStorage.setItem("gacha",JSON.stringify(data));}
+function save(){
+ localStorage.setItem("gacha",JSON.stringify(data));
+}
 
-/* Пассив */
+/* === ПАССИВНЫЙ ДОХОД === */
 function passive(){
  const now=Date.now();
  const sec=Math.floor((now-data.last)/1000);
@@ -188,33 +190,39 @@ function passive(){
  save();
 }
 
-/* Навигация */
-function show(s){
- ["main","gacha","shop","inventory","leaderboard"].forEach(x=>{
-  document.getElementById("screen-"+x).classList.add("hidden");
+/* === НАВИГАЦИЯ === */
+function show(screen){
+ ["main","gacha","shop","inventory","leaderboard"].forEach(s=>{
+  document.getElementById("screen-"+s).classList.add("hidden");
  });
- document.getElementById("screen-"+s).classList.remove("hidden");
+ document.getElementById("screen-"+screen).classList.remove("hidden");
  render();
 }
 
-/* Гача */
+/* === ГАЧА === */
 function rollGacha(){
  if(data.coins<50) return;
  data.coins-=50;
- const cat=cats[Math.floor(Math.random()*cats.length)];
+ let r=Math.random();
+ let pool=cats;
+ if(r>0.97) pool=cats.filter(c=>c.rarity=="Mythic");
+ else if(r>0.93) pool=cats.filter(c=>c.rarity=="Legendary");
+ else if(r>0.85) pool=cats.filter(c=>["Epic","Rare"].includes(c.rarity));
+ const cat=pool[Math.floor(Math.random()*pool.length)];
  data.inventory.push(cat);
- save();render();
+ save(); render();
 }
 
-/* Клетки */
+/* === ПОКУПКА КЛЕТКИ === */
 function buyCage(i){
  const c=cageTypes[i];
  if(data.coins<c.price) return;
  data.coins-=c.price;
  data.cages.push({...c,cats:[]});
- save();render();
+ save(); render();
 }
 
+/* === ПОСАДИТЬ КОТА === */
 function placeCat(ci,ii){
  const cage=data.cages[ci];
  const cat=data.inventory[ii];
@@ -222,112 +230,98 @@ function placeCat(ci,ii){
  if(cage.cats.length>=cage.slots) return;
  cage.cats.push(cat);
  data.inventory.splice(ii,1);
- save();render();
+ save(); render();
 }
 
-/* Лидерборд (локальный) */
+/* === ЛИДЕРБОРД === */
 function updateLeaderboard(){
- const name=tg.initDataUnsafe.user?.first_name||"Player";
- let entry=data.leaderboard.find(e=>e.name===name);
- if(!entry){
+ const name=tg.initDataUnsafe.user?.first_name || "Player";
+ let e=data.leaderboard.find(x=>x.name===name);
+ if(!e){
   data.leaderboard.push({name,coins:Math.floor(data.coins)});
  }else{
-  entry.coins=Math.max(entry.coins,Math.floor(data.coins));
+  e.coins=Math.max(e.coins,Math.floor(data.coins));
  }
  data.leaderboard.sort((a,b)=>b.coins-a.coins);
  data.leaderboard=data.leaderboard.slice(0,10);
  save();
 }
 
-/* Рендер */
-<script>
+/* === РЕНДЕР === */
 function render(){
-  document.getElementById("coins").innerText=Math.floor(data.coins);
+ document.getElementById("coins").innerText=Math.floor(data.coins);
 
-  /* ===== ГЛАВНАЯ ===== */
-  const main=document.getElementById("screen-main");
-  main.innerHTML="<h2>🏠 Клетки</h2>";
-  if(!data.cages.length){
-    main.innerHTML+="<p class='small'>Клеток пока нет</p>";
-  }
-  data.cages.forEach(c=>{
-    let income=c.cats.reduce((s,x)=>s+x.income,0);
-    main.innerHTML+=`
-    <div class="card">
-      ${c.emoji} ${c.name}<br>
-      <span class="small">Доход: ${income}/сек</span><br>
-      ${c.cats.length
-        ? c.cats.map(cat=>`🐱 ${cat.name} (+${cat.income})`).join("<br>")
-        : "<span class='small'>Пусто</span>"
-      }
-    </div>`;
-  });
+ /* ГЛАВНАЯ */
+ const main=document.getElementById("screen-main");
+ main.innerHTML="<h2>🏠 Клетки</h2>";
+ if(!data.cages.length){
+  main.innerHTML+="<p class='small'>Клеток пока нет</p>";
+ }
+ data.cages.forEach(c=>{
+  const income=c.cats.reduce((s,x)=>s+x.income,0);
+  main.innerHTML+=`
+  <div class="card">
+   ${c.emoji} ${c.name}<br>
+   <span class="small">Доход: ${income}/сек</span><br>
+   ${c.cats.length
+     ? c.cats.map(cat=>`🐱 ${cat.name} (+${cat.income})`).join("<br>")
+     : "<span class='small'>Пусто</span>"
+   }
+  </div>`;
+ });
 
-  /* ===== МАГАЗИН ===== */
-  const shop=document.getElementById("shop");
-  shop.innerHTML="";
-  cageTypes.forEach((c,i)=>{
-    shop.innerHTML+=`
-    <div class="card">
-      ${c.emoji} ${c.name}<br>
-      Слоты: ${c.slots}<br>
-      Редкости: ${c.allowed.join(", ")}<br>
-      Цена: ${c.price}💰
-      <button onclick="buyCage(${i})">Купить</button>
-    </div>`;
-  });
+ /* МАГАЗИН */
+ const shop=document.getElementById("shop");
+ shop.innerHTML="";
+ cageTypes.forEach((c,i)=>{
+  shop.innerHTML+=`
+  <div class="card">
+   ${c.emoji} ${c.name}<br>
+   Слоты: ${c.slots}<br>
+   Редкости: ${c.allowed.join(", ")}<br>
+   Цена: ${c.price}💰
+   <button onclick="buyCage(${i})">Купить</button>
+  </div>`;
+ });
 
-  /* ===== ИНВЕНТАРЬ (НОВАЯ ЛОГИКА) ===== */
-  const inv=document.getElementById("inventory");
-  inv.innerHTML="";
+ /* ИНВЕНТАРЬ (ОГРАНИЧЕННЫЙ) */
+ const inv=document.getElementById("inventory");
+ inv.innerHTML="";
+ data.inventory.forEach((cat,i)=>{
+  const validCages=data.cages
+    .map((c,ci)=>({c,ci}))
+    .filter(x=>x.c.allowed.includes(cat.rarity)&&x.c.cats.length<x.c.slots);
 
-  data.inventory.forEach((cat,i)=>{
-    // ищем подходящие клетки
-    const validCages = data.cages
-      .map((c,ci)=>({c,ci}))
-      .filter(x =>
-        x.c.allowed.includes(cat.rarity) &&
-        x.c.cats.length < x.c.slots
-      );
+  inv.innerHTML+=`
+  <div class="card">
+   🐱 ${cat.name}<br>
+   ⭐ ${cat.rarity}<br>
+   💰 +${cat.income}/сек
+   ${
+     validCages.length
+       ? validCages.map(x=>`
+         <button class="secondary"
+           onclick="placeCat(${x.ci},${i})">
+           ➕ В ${x.c.emoji} ${x.c.name}
+         </button>`).join("")
+       : `<div class="small">❌ Подходящая клетка отсутствует</div>`
+   }
+  </div>`;
+ });
 
-    let buttons = "";
-    if(validCages.length){
-      buttons = validCages.map(x=>`
-        <button class="secondary"
-          onclick="placeCat(${x.ci},${i})">
-          ➕ В ${x.c.emoji} ${x.c.name}
-        </button>
-      `).join("");
-    }else{
-      buttons = `
-        <div class="small danger">
-          ❌ Подходящая клетка отсутствует
-        </div>`;
-    }
-
-    inv.innerHTML+=`
-    <div class="card">
-      🐱 ${cat.name}<br>
-      ⭐ ${cat.rarity}<br>
-      💰 +${cat.income}/сек
-      ${buttons}
-    </div>`;
-  });
-
-  /* ===== ЛИДЕРБОРД ===== */
-  updateLeaderboard();
-  const l=document.getElementById("leaders");
-  l.innerHTML="";
-  data.leaderboard.forEach((e,i)=>{
-    l.innerHTML+=`
-    <tr>
-      <td>${i+1}</td>
-      <td>${e.name}</td>
-      <td>${e.coins}</td>
-    </tr>`;
-  });
+ /* ЛИДЕРБОРД */
+ updateLeaderboard();
+ const l=document.getElementById("leaders");
+ l.innerHTML="";
+ data.leaderboard.forEach((e,i)=>{
+  l.innerHTML+=`
+  <tr>
+   <td>${i+1}</td>
+   <td>${e.name}</td>
+   <td>${e.coins}</td>
+  </tr>`;
+ });
 }
-
 
 passive();
 render();
