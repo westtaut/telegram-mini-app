@@ -423,8 +423,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14p
 <script>
 /* ══════════════════════════════════════
    CONFIG — ЗАМЕНИ URL НА СВОЙ СЕРВЕР!
+   Пример: 'https://gacha-cats-production.up.railway.app'
+   Без слэша в конце! Обязательно https://
 ══════════════════════════════════════ */
-const SERVER_URL = 'https://YOUR-SERVER.railway.app'; // ← СЮДА ВСТАВИТЬ URL ПОСЛЕ ДЕПЛОЯ
+const SERVER_URL = 'https://YOUR-SERVER.up.railway.app'; // ← СЮДА ВСТАВИТЬ СВОЙ URL
 
 /* ══════════════════════════════════════
    TELEGRAM
@@ -689,24 +691,74 @@ let socket = null, serverOnline = false;
 let pvpQueueStatus = 'idle';
 let lbData = [];
 
+let _socketRetries = 0;
+const _MAX_RETRIES = 5;
+
 function initSocket() {
+  // Если URL не изменён — не пытаемся подключиться
+  if (!SERVER_URL || SERVER_URL.includes('YOUR-SERVER')) {
+    console.warn('SERVER_URL не настроен. Работаем в офлайн режиме.');
+    serverOnline = false;
+    showConnBanner('', '⚪ Офлайн (настрой SERVER_URL)');
+    setTimeout(() => hideConnBanner(), 4000);
+    return;
+  }
+
+  showConnBanner('', '🔌 Подключение к серверу...');
+
+  // Сначала пингуем сервер чтобы разбудить (Railway free tier засыпает)
+  fetch(`${SERVER_URL}/api/leaderboard`, { signal: AbortSignal.timeout(12000) })
+    .then(r => r.json())
+    .then(data => {
+      lbData = data;
+      if (cur === 4) renderLB();
+    })
+    .catch(() => {}) // не критично
+    .finally(() => _connectSocket()); // подключаем сокет после пинга
+}
+
+function _connectSocket() {
   try {
-    socket = io(SERVER_URL, { transports: ['websocket','polling'], timeout: 5000 });
+    if (socket) { socket.disconnect(); socket = null; }
+
+    socket = io(SERVER_URL, {
+      transports: ['polling', 'websocket'], // polling первым — стабильнее через Railway proxy
+      timeout: 15000,      // 15 сек — Railway free tier может долго просыпаться
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+    });
 
     socket.on('connect', () => {
       serverOnline = true;
+      _socketRetries = 0;
       socket.emit('player_join', { uid: MY_UID, name: MY_NAME });
-      showConnBanner('online', '🟢 Онлайн');
+      showConnBanner('online', '🟢 Онлайн — мультиплеер активен!');
       document.getElementById('hdr-online').textContent = '● Онлайн';
       document.getElementById('hdr-online').style.color = '#4caf50';
       setTimeout(() => hideConnBanner(), 3000);
     });
 
-    socket.on('disconnect', () => {
+    socket.on('connect_error', (err) => {
+      serverOnline = false;
+      _socketRetries++;
+      console.warn('Socket connect error:', err.message, '| попытка:', _socketRetries);
+      document.getElementById('hdr-online').textContent = '● Офлайн';
+      document.getElementById('hdr-online').style.color = '';
+      if (_socketRetries === 1) {
+        showConnBanner('', `⏳ Сервер просыпается... (${_socketRetries}/${_MAX_RETRIES})`);
+      } else if (_socketRetries >= _MAX_RETRIES) {
+        showConnBanner('', '❌ Сервер недоступен — проверь URL');
+        setTimeout(() => hideConnBanner(), 6000);
+      }
+    });
+
+    socket.on('disconnect', (reason) => {
       serverOnline = false;
       document.getElementById('hdr-online').textContent = '● Офлайн';
       document.getElementById('hdr-online').style.color = '';
       if (pvpQueueStatus !== 'idle') { pvpQueueStatus = 'idle'; if (cur === 3) renderPvP(); }
+      // Auto-reconnect handled by socket.io
     });
 
     socket.on('leaderboard_update', (data) => {
@@ -728,13 +780,14 @@ function initSocket() {
     });
 
   } catch(e) {
+    console.error('initSocket exception:', e);
     serverOnline = false;
     loadLBFallback();
   }
 }
 
 function loadLBFallback() {
-  fetch(`$https://enthusiastic-nurturing-production-5690.up.railway.app/api/leaderboard`)
+  fetch(`${SERVER_URL}/api/leaderboard`)
     .then(r => r.json())
     .then(d => { lbData = d; if (cur === 4) renderLB(); })
     .catch(() => {});
