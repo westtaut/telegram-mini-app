@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Telegram Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    button {
+      padding: 15px;
+      font-size: 16px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Привет, <span id="name"></span> 👋</h2>
+
+<button onclick="sendData()">Отправить данные боту</button>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand(); // разворачивает приложение
+
+  document.getElementById("name").innerText =
+    tg.initDataUnsafe.user?.first_name || "друг";
+
+  function sendData() {
+    tg.sendData("Кнопка нажата 🚀");
+  }
+</script>
+
+</body>
+</html>
