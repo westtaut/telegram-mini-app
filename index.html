@@ -734,7 +734,7 @@ function initSocket() {
 }
 
 function loadLBFallback() {
-  fetch(`https://enthusiastic-nurturing-production-5690.up.railway.app/api/leaderboard`)
+  fetch(`$https://enthusiastic-nurturing-production-5690.up.railway.app/api/leaderboard`)
     .then(r => r.json())
     .then(d => { lbData = d; if (cur === 4) renderLB(); })
     .catch(() => {});
