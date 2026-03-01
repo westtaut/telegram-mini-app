@@ -8,60 +8,61 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:  var(--tg-theme-bg-color,#0f0f18);
-  --bg2: var(--tg-theme-secondary-bg-color,#1a1a28);
-  --txt: var(--tg-theme-text-color,#eef0f8);
-  --acc: #5b8cff; --acc2:#7cf5c8;
-  --rc:#9e9e9e; --rr:#4fc3f7; --re:#ce93d8; --rl:#ffd54f;
-  --fish:#4fc3f7; --star:#ffd54f;
-  --rad:16px;
+  --bg:#0f0f18;--bg2:#1a1a28;--bg3:#12121e;
+  --txt:#eef0f8;--acc:#5b8cff;--acc2:#7cf5c8;
+  --rc:#9e9e9e;--rr:#4fc3f7;--re:#ce93d8;--rl:#ffd54f;
+  --fish:#4fc3f7;--star:#ffd54f;--rad:16px;
 }
-html,body{height:100%;overflow:hidden}
+html,body{height:100%;overflow:hidden;touch-action:pan-y}
 body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.45}
 
-/* ─ HEADER ─ */
-.hdr{display:flex;align-items:center;justify-content:center;height:52px;padding:0 14px;position:relative;flex-shrink:0}
-.hdr-title{font-size:16px;font-weight:700}
-.res-row{position:absolute;right:10px;display:flex;gap:6px}
-.res-pill{display:flex;align-items:center;gap:3px;background:var(--bg2);border-radius:50px;padding:4px 10px;font-size:12px;font-weight:700}
+/* HEADER */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 12px 6px;flex-shrink:0;min-height:64px}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:-.3px;padding-top:2px}
+.res-block{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.res-row1,.res-row2{display:flex;gap:5px}
+.res-pill{display:flex;align-items:center;gap:3px;background:var(--bg2);border-radius:50px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap}
+.res-pill.coin{color:#ffe082}
 .res-pill.fish{color:var(--fish)}
 .res-pill.star{color:var(--star)}
-.res-pill.coin{color:#fff}
+.res-pill.gem{color:#e040fb}
 
-/* ─ NAV ─ */
-.nav{position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:stretch;padding:0 4px;padding-bottom:env(safe-area-inset-bottom,0);z-index:50}
-.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:rgba(255,255,255,.32);font-size:9px;font-weight:700;cursor:pointer;border-radius:10px;transition:color .15s;width:auto;margin:0;padding:4px 0}
-.nb .ic{font-size:20px;line-height:1;transition:transform .18s}
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--bg2);border-top:1px solid rgba(255,255,255,.05);display:flex;align-items:stretch;padding:0 2px;padding-bottom:env(safe-area-inset-bottom,0);z-index:50}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:rgba(255,255,255,.32);font-size:8px;font-weight:700;cursor:pointer;border-radius:10px;transition:color .15s;margin:0;padding:4px 0}
+.nb .ic{font-size:19px;line-height:1;transition:transform .18s}
 .nb.on{color:var(--acc)}.nb.on .ic{transform:scale(1.18)}
 
-/* ─ CAROUSEL ─ */
-.car{display:flex;width:400%;height:calc(100vh - 52px - 62px);transition:transform .28s cubic-bezier(.4,0,.2,1)}
-.scr{width:25%;overflow-y:auto;overflow-x:hidden;padding:8px 12px 20px;-webkit-overflow-scrolling:touch}
+/* CAROUSEL */
+.car{display:flex;width:600%;height:calc(100dvh - 64px - 62px);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.scr{width:calc(100%/6);overflow-y:auto;overflow-x:hidden;padding:6px 11px 20px;-webkit-overflow-scrolling:touch}
 
-/* ─ COMMON ─ */
-.st{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.28;margin:14px 0 7px}
-.st:first-child{margin-top:2px}
-.card{background:var(--bg2);border-radius:var(--rad);padding:13px 14px;margin-bottom:9px}
-.btn{width:100%;padding:12px;border:none;border-radius:var(--rad);font-size:13px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--acc),var(--acc2));transition:transform .1s,opacity .1s;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:5px}
+/* COMMON */
+.st{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.28;margin:12px 0 6px}
+.st:first-child{margin-top:0}
+.card{background:var(--bg2);border-radius:var(--rad);padding:12px 13px;margin-bottom:8px}
+.btn{width:100%;padding:11px;border:none;border-radius:var(--rad);font-size:13px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--acc),var(--acc2));transition:transform .1s,opacity .1s;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:5px}
 .btn:active{transform:scale(.97);opacity:.84}
 .btn.sec{background:rgba(255,255,255,.09)}
 .btn.red{background:rgba(255,80,80,.15);color:#ff8888}
 .btn.gold{background:linear-gradient(135deg,#e65100,#ffd54f);color:#1a0800}
-.btn.fish-btn{background:linear-gradient(135deg,#0277bd,#4fc3f7);color:#fff}
+.btn.fish-btn{background:linear-gradient(135deg,#0277bd,#4fc3f7)}
+.btn.gear-btn{background:linear-gradient(135deg,#6a1b9a,#ce93d8)}
+.btn.raid-btn{background:linear-gradient(135deg,#b71c1c,#ff6f00)}
 .btn:disabled{opacity:.35;cursor:default;transform:none!important}
-.empty{text-align:center;padding:26px 12px;opacity:.3;font-size:13px;line-height:1.9}
-.empty-ic{font-size:36px;display:block;margin-bottom:7px}
+.empty{text-align:center;padding:22px 12px;opacity:.3;font-size:13px;line-height:1.9}
+.empty-ic{font-size:32px;display:block;margin-bottom:6px}
 
-/* ─ RARITY ─ */
+/* RARITY */
 .rc{color:var(--rc)}.rr{color:var(--rr)}.re{color:var(--re)}.rl{color:var(--rl)}
-.rb{display:inline-flex;align-items:center;font-size:9px;font-weight:800;letter-spacing:.35px;text-transform:uppercase;padding:2px 8px;border-radius:50px}
+.rb{display:inline-flex;align-items:center;font-size:9px;font-weight:800;letter-spacing:.35px;text-transform:uppercase;padding:2px 7px;border-radius:50px}
 .rb.Common{background:#252530;color:var(--rc)}
 .rb.Rare{background:linear-gradient(90deg,#01579b,#29b6f6);color:#fff}
 .rb.Epic{background:linear-gradient(90deg,#6a1b9a,#ce93d8);color:#fff}
 .rb.Legendary{background:linear-gradient(90deg,#bf360c,#ffd54f);color:#1a0800}
 
-/* ─ CAGE ─ */
-.cc{position:relative;padding-top:17px}
+/* CAGE */
+.cc{position:relative;padding-top:16px}
 .cstr{position:absolute;top:0;left:0;right:0;height:4px;border-radius:var(--rad) var(--rad) 0 0}
 .cc.Common .cstr{background:var(--rc)}
 .cc.Rare .cstr{background:linear-gradient(90deg,#29b6f6,#01579b)}
@@ -70,116 +71,150 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
 .cc.Rare{box-shadow:0 0 0 1px #4fc3f718}
 .cc.Epic{box-shadow:0 0 0 1px #ce93d818}
 .cc.Legendary{box-shadow:0 0 0 1px #ffd54f30}
-.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .chl{display:flex;align-items:center;gap:8px}
-.sbar{display:flex;gap:3px;margin:7px 0 10px}
+.sbar{display:flex;gap:3px;margin:6px 0 9px}
 .sl{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.07)}
 .sl.f.Common{background:var(--rc)}.sl.f.Rare{background:var(--rr)}.sl.f.Epic{background:var(--re)}.sl.f.Legendary{background:var(--rl)}
 .crow{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
 .crow:last-child{border-bottom:none}
 .crow:active{opacity:.68}
-.crow-em{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.crow-em{font-size:20px;width:26px;text-align:center;flex-shrink:0}
 .crow-info{flex:1;min-width:0}
 .crow-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .crow-sub{font-size:10px;opacity:.38;margin-top:1px}
-.crow-lv{font-size:10px;font-weight:700;background:rgba(255,255,255,.07);padding:2px 7px;border-radius:5px;flex-shrink:0}
-.crow-btn{background:rgba(255,255,255,.06);border:none;color:rgba(255,255,255,.45);width:28px;height:28px;border-radius:7px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;margin:0}
+.crow-lv{font-size:10px;font-weight:700;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:5px;flex-shrink:0}
+.crow-btn{background:rgba(255,255,255,.06);border:none;color:rgba(255,255,255,.45);width:26px;height:26px;border-radius:7px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
 .crow-btn:active{background:rgba(255,255,255,.14)}
-.cage-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)}
+.cage-foot{display:flex;justify-content:space-between;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.05)}
 
-/* ─ INCOME BANNER ─ */
-.incb{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-radius:var(--rad);padding:10px 14px;margin-bottom:9px}
+/* INCOME BANNER */
+.incb{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-radius:var(--rad);padding:9px 13px;margin-bottom:8px}
 .incb-left .lbl{font-size:10px;opacity:.38}
-.incb-left .val{font-size:17px;font-weight:800;color:var(--acc2);margin-top:1px}
+.incb-left .val{font-size:16px;font-weight:800;color:var(--acc2);margin-top:1px}
 .incb-resources{display:flex;gap:8px}
 .res-tag{display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;opacity:.6}
 
-/* ─ GACHA ─ */
-.ghero{background:var(--bg2);border-radius:20px;padding:22px 14px;text-align:center;margin-bottom:9px}
-.ghero .gi{font-size:60px;display:block;margin-bottom:14px;animation:gwob 3.5s ease-in-out infinite}
+/* GACHA HERO */
+.ghero{background:var(--bg2);border-radius:20px;padding:18px 13px;text-align:center;margin-bottom:8px}
+.ghero .gi{font-size:52px;display:block;margin-bottom:10px;animation:gwob 3.5s ease-in-out infinite}
 @keyframes gwob{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-4deg) scale(1.04)}50%{transform:rotate(4deg) scale(1.04)}80%{transform:rotate(-2deg)}}
-.gcp{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-bottom:14px}
-.gcp span{font-size:10px;font-weight:700;padding:3px 9px;border-radius:50px;background:rgba(255,255,255,.06)}
+.gcp{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-bottom:10px}
+.gcp span{font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)}
+.gacha-tabs{display:flex;gap:5px;margin-bottom:10px}
+.gacha-tab{flex:1;padding:9px 5px;border:none;border-radius:11px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);transition:all .15s}
+.gacha-tab.on{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff}
+.gacha-info-box{background:rgba(255,255,255,.04);border-radius:12px;padding:10px;margin-bottom:8px}
 .cli{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--bg2);border-radius:12px;margin-bottom:5px;border-left:3px solid var(--c,#555)}
 
-/* ─ SHOP ─ */
-.ss{display:flex;gap:5px;margin:8px 0}
-.sv{flex:1;background:rgba(255,255,255,.04);border-radius:9px;padding:7px;text-align:center}
-.sv .v{font-size:15px;font-weight:800;display:block}.sv .l{font-size:9px;opacity:.38;margin-top:1px}
+/* SHOP */
+.ss{display:flex;gap:5px;margin:7px 0}
+.sv{flex:1;background:rgba(255,255,255,.04);border-radius:9px;padding:6px;text-align:center}
+.sv .v{font-size:14px;font-weight:800;display:block}.sv .l{font-size:9px;opacity:.38;margin-top:1px}
 .obadge{background:#1b5e20;color:#69f0ae;font-size:9px;font-weight:700;padding:2px 8px;border-radius:50px}
 
-/* ─ INVENTORY ─ */
-.ii{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg2);border-radius:var(--rad);margin-bottom:7px;border-left:3px solid var(--c,#444);cursor:pointer;transition:opacity .1s}
+/* INVENTORY */
+.ii{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--bg2);border-radius:var(--rad);margin-bottom:7px;border-left:3px solid var(--c,#444);cursor:pointer;transition:opacity .1s}
 .ii:active{opacity:.72}
-.ii-em{font-size:28px;width:38px;text-align:center;flex-shrink:0}
+.ii-em{font-size:26px;width:36px;text-align:center;flex-shrink:0}
 .ii-info{flex:1;min-width:0}
 .ii-name{font-weight:700;font-size:13px}
 .ii-sub{display:flex;align-items:center;gap:4px;margin-top:3px;flex-wrap:wrap}
 .iicnt{background:rgba(255,255,255,.09);border-radius:50px;padding:2px 8px;font-size:10px;font-weight:700}
 .iac{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
-.ipb{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#fff;padding:6px 9px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0;transition:transform .1s}
+.ipb{background:linear-gradient(135deg,var(--acc),var(--acc2));border:none;color:#fff;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0;transition:transform .1s}
 .ipb:active{transform:scale(.93)}
-.isb{background:rgba(255,100,100,.13);border:none;color:#ff8888;padding:6px 9px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0;transition:transform .1s}
+.isb{background:rgba(255,100,100,.13);border:none;color:#ff8888;padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin:0;transition:transform .1s}
 .isb:active{transform:scale(.93)}
 
-/* ─ PET PAGE ─ */
+/* PET PAGE */
 #pet-page{display:none;position:fixed;inset:0;z-index:200;background:var(--bg);overflow-y:auto}
 #pet-page.open{display:block;animation:ppIn .2s ease}
 @keyframes ppIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-.pp-hdr{display:flex;align-items:center;gap:9px;padding:12px 12px 0;position:sticky;top:0;background:var(--bg);z-index:5;padding-bottom:5px}
-.pp-back{background:rgba(255,255,255,.07);border:none;color:#fff;width:34px;height:34px;border-radius:9px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;margin:0}
+.pp-hdr{display:flex;align-items:center;gap:9px;padding:12px 12px 5px;position:sticky;top:0;background:var(--bg);z-index:5}
+.pp-back{background:rgba(255,255,255,.07);border:none;color:#fff;width:34px;height:34px;border-radius:9px;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
 .pp-ttl{font-size:15px;font-weight:700;flex:1}
-.pp-fav{background:none;border:none;font-size:20px;cursor:pointer;padding:0;margin:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:9px}
+.pp-fav{background:none;border:none;font-size:20px;cursor:pointer;padding:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:9px}
 .pp-fav:active{background:rgba(255,255,255,.08)}
 .pp-body{padding:8px 12px 80px}
 
-/* Pet hero card */
-.pet-hero{background:var(--bg2);border-radius:20px;padding:18px;text-align:center;margin-bottom:9px;position:relative;overflow:hidden}
+/* Pet hero */
+.pet-hero{background:var(--bg2);border-radius:20px;padding:16px;text-align:center;margin-bottom:8px;position:relative;overflow:hidden}
 .pet-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,var(--glow,rgba(91,140,255,.15)),transparent 70%)}
-.pet-hero-em{font-size:68px;display:block;margin-bottom:8px;line-height:1;position:relative}
+.pet-hero-em{font-size:64px;display:block;margin-bottom:6px;line-height:1;position:relative}
 .pet-hero-name{font-size:18px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;position:relative}
 .edit-ico{font-size:13px;opacity:.35}
-.pet-lv-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:6px}
+.pet-lv-row{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:5px}
 .pet-lv-badge{background:var(--acc);color:#fff;font-size:10px;font-weight:800;padding:2px 10px;border-radius:50px}
 .xp-bar{flex:1;max-width:110px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
 .xp-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;transition:width .38s}
 
 /* Stats */
-.sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:9px}
-.sb{background:var(--bg2);border-radius:13px;padding:10px;text-align:center}
-.sb .sv{font-size:16px;font-weight:800;display:block}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.sb{background:var(--bg2);border-radius:13px;padding:9px;text-align:center}
+.sb .sv{font-size:15px;font-weight:800;display:block}
 .sb .sl{font-size:9px;opacity:.38;margin-top:2px}
 
 /* Equipment */
-.eq-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:9px}
-.eq-slot{background:var(--bg2);border-radius:13px;padding:10px 6px;text-align:center;cursor:pointer;border:1.5px dashed rgba(255,255,255,.1);transition:border-color .12s,background .12s;position:relative}
+.eq-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.eq-slot{background:var(--bg2);border-radius:13px;padding:9px 5px;text-align:center;cursor:pointer;border:1.5px dashed rgba(255,255,255,.1);transition:border-color .12s,background .12s;position:relative}
 .eq-slot.filled{border-style:solid;border-color:rgba(255,255,255,.18)}
 .eq-slot:active{background:rgba(255,255,255,.07)}
-.eq-em{font-size:26px;display:block;margin-bottom:3px}
+.eq-em{font-size:24px;display:block;margin-bottom:3px}
 .eq-name{font-size:9px;opacity:.45;line-height:1.3}
 .eq-bonus{font-size:9px;color:var(--acc2);font-weight:700;margin-top:2px}
-.eq-rm{position:absolute;top:3px;right:3px;background:rgba(255,80,80,.2);border:none;color:#ff8888;width:16px;height:16px;border-radius:4px;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;margin:0}
+.eq-rm{position:absolute;top:3px;right:3px;background:rgba(255,80,80,.2);border:none;color:#ff8888;width:16px;height:16px;border-radius:4px;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
 .eq-slot.filled .eq-rm{display:flex}
 
-/* Level up card */
-.lvc{background:var(--bg2);border-radius:var(--rad);padding:13px 14px;margin-bottom:9px}
-.lv-cost-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+/* Level up */
+.lvc{background:var(--bg2);border-radius:var(--rad);padding:12px 13px;margin-bottom:8px}
+.lv-cost-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
 .lv-cost-label{font-size:12px;opacity:.42}
-.lv-cost-val{font-size:14px;font-weight:800;display:flex;align-items:center;gap:4px}
 .xp-track{height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;margin-top:5px}
 .xp-t-fill{height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:3px;transition:width .35s}
-.res-cost-grid{display:flex;gap:8px;margin-bottom:10px}
-.res-cost-item{flex:1;background:rgba(255,255,255,.05);border-radius:10px;padding:8px;text-align:center}
-.res-cost-item .rv{font-size:16px;font-weight:800;display:block}
+.res-cost-grid{display:flex;gap:8px;margin-bottom:9px}
+.res-cost-item{flex:1;background:rgba(255,255,255,.05);border-radius:10px;padding:7px;text-align:center}
+.res-cost-item .rv{font-size:15px;font-weight:800;display:block}
 .res-cost-item .rl2{font-size:9px;opacity:.4;margin-top:1px}
 .res-cost-item.ok .rv{color:var(--acc2)}
 .res-cost-item.nok .rv{color:#ff8888}
 
-/* ─ MODALS ─ */
+/* RAID SCREEN */
+.raid-hero{background:linear-gradient(160deg,#1a0a0a,#2a1010);border-radius:20px;padding:16px;margin-bottom:8px;position:relative;overflow:hidden;border:1px solid rgba(255,80,80,.15)}
+.raid-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,80,80,.1),transparent 70%)}
+.raid-title{font-size:15px;font-weight:800;margin-bottom:3px}
+.raid-sub{font-size:11px;opacity:.45;margin-bottom:12px}
+.raid-card{background:rgba(255,255,255,.04);border-radius:13px;padding:11px;margin-bottom:7px;border:1px solid rgba(255,255,255,.06)}
+.raid-card.active{border-color:rgba(255,150,50,.3);background:rgba(255,150,50,.05)}
+.raid-card.done{border-color:rgba(100,255,150,.25);background:rgba(100,255,150,.04)}
+.raid-timer{font-size:11px;font-weight:700;color:#ff9800}
+.raid-reward{font-size:11px;color:var(--acc2);margin-top:3px}
+.raid-prog{height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:7px;overflow:hidden}
+.raid-prog-fill{height:100%;background:linear-gradient(90deg,#ff6f00,#ffd54f);border-radius:2px;transition:width 1s}
+.battle-arena{background:linear-gradient(160deg,#0a0a1a,#1a0a2a);border-radius:20px;padding:14px;margin-bottom:8px;border:1px solid rgba(150,80,255,.2)}
+.battle-vs{text-align:center;font-size:20px;font-weight:800;opacity:.5;margin:8px 0}
+.battle-fighter{background:rgba(255,255,255,.04);border-radius:13px;padding:10px;text-align:center}
+.battle-fighter-em{font-size:36px;display:block;margin-bottom:4px}
+.battle-hp{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin-top:6px;overflow:hidden}
+.battle-hp-fill{height:100%;border-radius:3px;transition:width .5s}
+.battle-log{background:rgba(0,0,0,.3);border-radius:11px;padding:8px 10px;font-size:11px;line-height:1.7;max-height:90px;overflow-y:auto;margin-top:8px;border:1px solid rgba(255,255,255,.05)}
+
+/* LEADERBOARD */
+.lb-hero{background:linear-gradient(160deg,#1a1500,#2a2000);border-radius:20px;padding:14px;margin-bottom:8px;text-align:center;border:1px solid rgba(255,213,79,.2)}
+.lb-row{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--bg2);border-radius:12px;margin-bottom:6px;border-left:3px solid var(--lc,#444)}
+.lb-rank{font-size:16px;font-weight:800;width:28px;text-align:center;flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:13px;font-weight:700}
+.lb-sub{font-size:10px;opacity:.38;margin-top:1px}
+.lb-score{font-size:13px;font-weight:800;color:var(--rl);flex-shrink:0}
+.lb-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:50px;background:rgba(255,213,79,.15);color:var(--rl);flex-shrink:0}
+.you-row{background:rgba(91,140,255,.08);border:1px solid rgba(91,140,255,.2);border-radius:12px;padding:9px 11px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+
+/* MODALS */
 .mbg{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.68);align-items:flex-end;justify-content:center}
 .mbg.open{display:flex;animation:mIn .2s ease}
 @keyframes mIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.ms{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-height:72vh;overflow-y:auto;padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0))}
+.ms{background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-height:74vh;overflow-y:auto;padding:12px 14px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0))}
 .mh{width:32px;height:3px;background:rgba(255,255,255,.16);border-radius:2px;margin:0 auto 12px}
 .mt{font-size:14px;font-weight:700;margin-bottom:2px}
 .msub{font-size:11px;opacity:.35;margin-bottom:11px}
@@ -195,36 +230,44 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
 .eqi-info{flex:1}.eqi-name{font-size:13px;font-weight:600}.eqi-sub{font-size:11px;opacity:.4;margin-top:1px}.eqi-eq{font-size:10px;color:var(--acc2);font-weight:700;margin-top:2px}
 .rnm-inp{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:11px;padding:11px 13px;font-size:14px;color:var(--txt);outline:none;margin-bottom:9px}
 .rnm-inp:focus{border-color:var(--acc)}
+.raid-pick{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:11px;margin-bottom:6px;background:rgba(255,255,255,.04);cursor:pointer;transition:background .12s}
+.raid-pick:active{background:rgba(255,255,255,.09)}
+.raid-pick.selected{background:rgba(255,150,50,.1);border:1px solid rgba(255,150,50,.3)}
 
-/* ─ TOAST ─ */
+/* TOAST */
 .toast{position:fixed;bottom:calc(68px + env(safe-area-inset-bottom,0));left:50%;transform:translateX(-50%) translateY(8px);background:rgba(15,15,28,.95);color:#fff;padding:8px 17px;border-radius:50px;font-size:12px;font-weight:500;z-index:500;opacity:0;pointer-events:none;white-space:nowrap;transition:opacity .2s,transform .2s;border:1px solid rgba(255,255,255,.07)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ─ GACHA OVERLAY ─ */
+/* GACHA OVERLAY */
 #gov{display:none;position:fixed;inset:0;z-index:600;flex-direction:column;align-items:center;justify-content:center}
 #gov.vis{display:flex;background:rgba(0,0,0,.92);animation:fd .26s ease}
 @keyframes fd{from{opacity:0}to{opacity:1}}
 #grays{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:sp 14s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .ray{position:absolute;width:110vmax;height:2px;transform-origin:50% 50%;opacity:.13}
-#rcrd{position:relative;z-index:2;width:min(264px,82vw);border-radius:24px;padding:28px 20px 22px;text-align:center;animation:cpop .44s cubic-bezier(.34,1.56,.64,1) forwards}
+#rcrd{position:relative;z-index:2;width:min(264px,82vw);border-radius:24px;padding:26px 20px 20px;text-align:center;animation:cpop .44s cubic-bezier(.34,1.56,.64,1) forwards}
 @keyframes cpop{0%{opacity:0;transform:scale(.24) rotate(-12deg)}65%{opacity:1;transform:scale(1.07) rotate(1deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
 #rcrd.Common{background:linear-gradient(160deg,#1e1e24,#15151c);border:1.5px solid #3a3a3a}
 #rcrd.Rare{background:linear-gradient(160deg,#09202e,#0b1a2a);border:1.5px solid #4fc3f7;box-shadow:0 0 40px #4fc3f724}
 #rcrd.Epic{background:linear-gradient(160deg,#1e0b34,#180726);border:1.5px solid #ce93d8;box-shadow:0 0 50px #ce93d834}
 #rcrd.Legendary{background:linear-gradient(160deg,#281500,#180d00);border:1.5px solid #ffd54f;box-shadow:0 0 60px #ffd54f44}
-#grem{font-size:72px;display:block;margin-bottom:11px;line-height:1}
+#grem{font-size:68px;display:block;margin-bottom:10px;line-height:1}
 .bnc #grem{animation:cb 1.3s ease-in-out infinite .5s}
-@keyframes cb{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-13px) scale(1.09)}}
-#grnm{font-size:20px;font-weight:800;margin:8px 0 3px}
-#grinc{font-size:12px;opacity:.52;margin-bottom:12px}
-#grcl{margin-top:18px;z-index:2;width:min(180px,68vw);padding:12px;border:none;border-radius:var(--rad);font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.1);cursor:pointer;animation:fd .3s ease .58s both;border:1px solid rgba(255,255,255,.1)}
+@keyframes cb{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-12px) scale(1.09)}}
+#grnm{font-size:20px;font-weight:800;margin:7px 0 3px}
+#grinc{font-size:12px;opacity:.52;margin-bottom:11px}
+#grcl{margin-top:16px;z-index:2;width:min(180px,68vw);padding:12px;border:none;border-radius:var(--rad);font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.1);cursor:pointer;animation:fd .3s ease .58s both;border:1px solid rgba(255,255,255,.1)}
 .part{position:absolute;border-radius:2px;pointer-events:none;animation:pf var(--d) ease-out var(--dl) forwards}
 @keyframes pf{0%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(.04)}}
 
-/* ─ LEVEL UP FLASH ─ */
+/* LEVEL UP FLASH */
 .lvl-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:700;pointer-events:none;font-size:56px;animation:lvFlash .8s ease forwards}
 @keyframes lvFlash{0%{opacity:1;transform:translate(-50%,-50%) scale(.6)}50%{opacity:1;transform:translate(-50%,-55%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-65%) scale(1.2)}}
+
+/* BATTLE OVERLAY */
+#bov{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.9);flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#bov.vis{display:flex;animation:fd .3s ease}
+.bov-card{background:var(--bg2);border-radius:20px;width:100%;max-width:340px;padding:18px;text-align:center}
 </style>
 </head>
 <body>
@@ -232,10 +275,15 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-title">🐱 Gacha Cats</div>
-  <div class="res-row">
-    <div class="res-pill coin">💰<span id="coins">0</span></div>
-    <div class="res-pill fish">🐟<span id="fish-count">0</span></div>
-    <div class="res-pill star">⭐<span id="star-count">0</span></div>
+  <div class="res-block">
+    <div class="res-row1">
+      <div class="res-pill coin">💰<span id="coins">0</span></div>
+      <div class="res-pill gem">💎<span id="gem-count">0</span></div>
+    </div>
+    <div class="res-row2">
+      <div class="res-pill fish">🐟<span id="fish-count">0</span></div>
+      <div class="res-pill star">⭐<span id="star-count">0</span></div>
+    </div>
   </div>
 </div>
 
@@ -245,14 +293,18 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
   <div class="scr" id="s1"></div>
   <div class="scr" id="s2"></div>
   <div class="scr" id="s3"></div>
+  <div class="scr" id="s4"></div>
+  <div class="scr" id="s5"></div>
 </div>
 
 <!-- NAV -->
 <nav class="nav">
   <button class="nb on" id="nb0" onclick="go(0)"><span class="ic">🏠</span>Клетки</button>
   <button class="nb"    id="nb1" onclick="go(1)"><span class="ic">🎰</span>Гача</button>
-  <button class="nb"    id="nb2" onclick="go(2)"><span class="ic">🛒</span>Магазин</button>
-  <button class="nb"    id="nb3" onclick="go(3)"><span class="ic">🎒</span>Инвентарь</button>
+  <button class="nb"    id="nb2" onclick="go(2)"><span class="ic">⚔️</span>Рейды</button>
+  <button class="nb"    id="nb3" onclick="go(3)"><span class="ic">🏆</span>Топ</button>
+  <button class="nb"    id="nb4" onclick="go(4)"><span class="ic">🛒</span>Магазин</button>
+  <button class="nb"    id="nb5" onclick="go(5)"><span class="ic">🎒</span>Инвент.</button>
 </nav>
 
 <!-- PET PAGE -->
@@ -299,6 +351,18 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
   </div>
 </div>
 
+<!-- RAID PICK MODAL -->
+<div class="mbg" id="raid-m" onclick="closeRaidM()">
+  <div class="ms" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt" id="raid-m-t">Выбери кота для рейда</div>
+    <div class="msub" id="raid-m-s"></div>
+    <div id="raid-m-l"></div>
+    <button class="btn raid-btn" id="raid-m-go" onclick="confirmRaid()" disabled>⚔️ Отправить в рейд</button>
+    <button class="btn sec" onclick="closeRaidM()" style="margin-top:5px">Отмена</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -314,6 +378,14 @@ body{font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;backgro
   <button id="grcl" onclick="closeGov()">Забрать! 🎉</button>
 </div>
 
+<!-- BATTLE OVERLAY -->
+<div id="bov" onclick="closeBov()">
+  <div class="bov-card" onclick="event.stopPropagation()">
+    <div id="bov-content"></div>
+    <button class="btn" onclick="closeBov()" style="margin-top:12px">Закрыть</button>
+  </div>
+</div>
+
 <script>
 /* ═══ TELEGRAM ═══ */
 const tg=(typeof Telegram!=='undefined')?Telegram.WebApp:null;
@@ -323,33 +395,41 @@ const HN=(t='success')=>{try{tg?.HapticFeedback?.notificationOccurred(t)}catch(e
 
 /* ═══ DATA ═══ */
 const CATS=[
-  {emoji:"😺",name:"Обычный кот",  income:1, rarity:"Common",  sell:10,   fishRate:0.5},
-  {emoji:"😸",name:"Полосатый",    income:2, rarity:"Common",  sell:20,   fishRate:0.8},
-  {emoji:"🦁",name:"Рыжий кот",   income:5, rarity:"Rare",    sell:120,  fishRate:2},
-  {emoji:"🐯",name:"Тигровый",    income:8, rarity:"Rare",    sell:200,  fishRate:3},
-  {emoji:"🐈‍⬛",name:"Чёрный кот",income:15,rarity:"Epic",    sell:600,  fishRate:6},
-  {emoji:"🦊",name:"Лисокот",     income:20,rarity:"Epic",    sell:800,  fishRate:8},
-  {emoji:"👾",name:"Космокот",    income:50,rarity:"Legendary",sell:3000, fishRate:20},
+  {emoji:"😺",name:"Обычный кот",  income:0.3, rarity:"Common",  sell:10,   fishRate:0.2, power:10},
+  {emoji:"😸",name:"Полосатый",    income:0.7, rarity:"Common",  sell:20,   fishRate:0.4, power:15},
+  {emoji:"🦁",name:"Рыжий кот",   income:1.5, rarity:"Rare",    sell:120,  fishRate:0.8, power:40},
+  {emoji:"🐯",name:"Тигровый",    income:2.5, rarity:"Rare",    sell:200,  fishRate:1.2, power:55},
+  {emoji:"🐈‍⬛",name:"Чёрный кот",income:5,   rarity:"Epic",    sell:600,  fishRate:2.5, power:120},
+  {emoji:"🦊",name:"Лисокот",     income:7,   rarity:"Epic",    sell:800,  fishRate:3.2, power:150},
+  {emoji:"👾",name:"Космокот",    income:18,  rarity:"Legendary",sell:3000, fishRate:8,  power:400},
 ];
 
 const GEAR=[
-  {id:"g1",emoji:"🎀",name:"Бантик",       slot:"collar",bonus:.10,rarity:"Common",  sell:5},
-  {id:"g2",emoji:"🔔",name:"Колокольчик",  slot:"collar",bonus:.25,rarity:"Rare",    sell:60},
-  {id:"g3",emoji:"💎",name:"Алмаз. ошейник",slot:"collar",bonus:.5, rarity:"Epic",   sell:300},
-  {id:"g4",emoji:"🎩",name:"Цилиндр",      slot:"hat",   bonus:.10,rarity:"Common",  sell:5},
-  {id:"g5",emoji:"👑",name:"Корона",       slot:"hat",   bonus:.30,rarity:"Rare",    sell:80},
-  {id:"g6",emoji:"🌟",name:"Звезда",       slot:"hat",   bonus:.60,rarity:"Epic",    sell:350},
-  {id:"g7",emoji:"🐟",name:"Рыбка",        slot:"toy",   bonus:.10,rarity:"Common",  sell:5},
-  {id:"g8",emoji:"⚽",name:"Мячик",       slot:"toy",   bonus:.25,rarity:"Rare",    sell:70},
-  {id:"g9",emoji:"🔮",name:"Маг. шар",    slot:"toy",   bonus:.50,rarity:"Epic",    sell:320},
+  {id:"g1",emoji:"🎀",name:"Бантик",         slot:"collar",bonus:.08,rarity:"Common",  sell:5, power:3},
+  {id:"g2",emoji:"🔔",name:"Колокольчик",    slot:"collar",bonus:.20,rarity:"Rare",    sell:60,power:15},
+  {id:"g3",emoji:"💎",name:"Алм. ошейник",   slot:"collar",bonus:.40,rarity:"Epic",    sell:300,power:50},
+  {id:"g4",emoji:"🎩",name:"Цилиндр",        slot:"hat",   bonus:.08,rarity:"Common",  sell:5, power:3},
+  {id:"g5",emoji:"👑",name:"Корона",         slot:"hat",   bonus:.25,rarity:"Rare",    sell:80,power:20},
+  {id:"g6",emoji:"🌟",name:"Звезда",         slot:"hat",   bonus:.50,rarity:"Epic",    sell:350,power:60},
+  {id:"g7",emoji:"🐟",name:"Рыбка",          slot:"toy",   bonus:.08,rarity:"Common",  sell:5, power:3},
+  {id:"g8",emoji:"⚽",name:"Мячик",         slot:"toy",   bonus:.20,rarity:"Rare",    sell:70,power:12},
+  {id:"g9",emoji:"🔮",name:"Маг. шар",      slot:"toy",   bonus:.45,rarity:"Epic",    sell:320,power:55},
 ];
 const GEAR_WGT={Common:65,Rare:28,Epic:7};
 
 const CAGES=[
-  {id:"wood",  emoji:"🪵",name:"Деревянная", rarity:"Common",   slots:2,bonus:1.0,price:0,    allowed:["Common"],                        desc:"Стартовая."},
-  {id:"iron",  emoji:"⚙️",name:"Железная",  rarity:"Rare",     slots:3,bonus:1.5,price:500,  allowed:["Common","Rare"],                 desc:"3 слота, ×1.5"},
-  {id:"magic", emoji:"🔮",name:"Магическая",rarity:"Epic",     slots:4,bonus:2.0,price:2000, allowed:["Common","Rare","Epic"],           desc:"4 слота, ×2"},
-  {id:"golden",emoji:"👑",name:"Золотая",   rarity:"Legendary",slots:5,bonus:3.0,price:8000, allowed:["Common","Rare","Epic","Legendary"],desc:"5 слотов, ×3"},
+  {id:"wood",  emoji:"🪵",name:"Деревянная", rarity:"Common",   slots:2,bonus:1.0,price:0,    allowed:["Common"],                        desc:"Стартовая клетка"},
+  {id:"iron",  emoji:"⚙️",name:"Железная",  rarity:"Rare",     slots:3,bonus:1.4,price:800,  allowed:["Common","Rare"],                 desc:"3 слота, ×1.4"},
+  {id:"magic", emoji:"🔮",name:"Магическая",rarity:"Epic",     slots:4,bonus:1.8,price:4000, allowed:["Common","Rare","Epic"],           desc:"4 слота, ×1.8"},
+  {id:"golden",emoji:"👑",name:"Золотая",   rarity:"Legendary",slots:5,bonus:2.5,price:15000,allowed:["Common","Rare","Epic","Legendary"],desc:"5 слотов, ×2.5"},
+];
+
+// RAID ZONES
+const RAIDS=[
+  {id:"r1",emoji:"🌲",name:"Лесная поляна",  dur:120, minPow:10,  rewardFish:[5,15],   rewardCoins:[30,80],   rewardGem:0,  xpGain:30,  desc:"Лёгкий рейд"},
+  {id:"r2",emoji:"🏔️",name:"Горное ущелье",  dur:300, minPow:40,  rewardFish:[15,40],  rewardCoins:[100,250], rewardGem:0,  xpGain:80,  desc:"Средней сложности"},
+  {id:"r3",emoji:"🌋",name:"Вулкан Ярости",  dur:600, minPow:120, rewardFish:[50,120], rewardCoins:[400,900], rewardGem:1,  xpGain:200, desc:"Сложный рейд"},
+  {id:"r4",emoji:"🌌",name:"Звёздная бездна",dur:1200,minPow:350, rewardFish:[200,500],rewardCoins:[2000,5000],rewardGem:3,  xpGain:600, desc:"Легендарный"},
 ];
 
 const CAT_WGT={Common:70,Rare:25,Epic:4,Legendary:1};
@@ -357,50 +437,72 @@ const RL={Common:"⬜ Common",Rare:"🔵 Rare",Epic:"🟣 Epic",Legendary:"🟡 
 const RC={Common:"#9e9e9e",Rare:"#4fc3f7",Epic:"#ce93d8",Legendary:"#ffd54f"};
 const GLOW={Common:"rgba(158,158,158,.12)",Rare:"rgba(79,195,247,.18)",Epic:"rgba(206,147,216,.2)",Legendary:"rgba(255,213,79,.22)"};
 
-// Стоимость прокачки: рыба + звёзды (растут с уровнем и редкостью)
-const LV_FISH_BASE={Common:5,Rare:12,Epic:25,Legendary:60};
-const LV_STAR_BASE={Common:0,Rare:1,Epic:2,Legendary:4};
+const LV_FISH_BASE={Common:8,Rare:20,Epic:45,Legendary:100};
+const LV_STAR_BASE={Common:0,Rare:2,Epic:4,Legendary:8};
 const MAX_LEVEL=25;
 
 function lvCost(pet){
   const lv=pet.level||1;
-  const fb=LV_FISH_BASE[pet.rarity]||5;
-  const sb=LV_STAR_BASE[pet.rarity]||0;
   return {
-    fish: Math.floor(fb * Math.pow(1.5,lv-1)),
-    stars: Math.floor(sb * Math.pow(1.3,lv-1)),
+    fish:Math.floor((LV_FISH_BASE[pet.rarity]||8)*Math.pow(1.5,lv-1)),
+    stars:Math.floor((LV_STAR_BASE[pet.rarity]||0)*Math.pow(1.3,lv-1)),
   };
 }
 
+// PvP MOCK OPPONENTS
+const PVP_OPPONENTS=[
+  {name:"ЗлойКотовод",   emoji:"😈",rating:420, power:280, cats:["🐈‍⬛","🐯","😸"]},
+  {name:"КосмоПушистик", emoji:"👾",rating:850, power:550, cats:["👾","🦊","🦁"]},
+  {name:"МегаМяуМяу",    emoji:"🤖",rating:210, power:180, cats:["🦁","😸","😺"]},
+  {name:"КотоБот5000",   emoji:"🤖",rating:1100,power:720, cats:["👾","👾","🐈‍⬛"]},
+  {name:"Пухлёнкин",     emoji:"😼",rating:95,  power:85,  cats:["😸","😺","😺"]},
+  {name:"КрасоткаМурка", emoji:"😻",rating:340, power:230, cats:["🦊","🐯","😸"]},
+];
+
+// LEADERBOARD (mock + player)
+let LEADERBOARD=[
+  {uid:"lb1",name:"КосмоПушистик",emoji:"👾",score:12800,wins:88,rarity:"Legendary"},
+  {uid:"lb2",name:"КотоБот5000",  emoji:"🤖",score:9400, wins:71,rarity:"Legendary"},
+  {uid:"lb3",name:"МегаТигр",     emoji:"🐯",score:7200, wins:55,rarity:"Epic"},
+  {uid:"lb4",name:"ЗлойКотовод", emoji:"😈",score:5600, wins:42,rarity:"Epic"},
+  {uid:"lb5",name:"КрасоткаМурка",emoji:"😻",score:4100,wins:33,rarity:"Rare"},
+  {uid:"lb6",name:"МегаМяуМяу",  emoji:"🤖",score:2800, wins:22,rarity:"Rare"},
+  {uid:"lb7",name:"ПухлёнкинPro",emoji:"😼",score:1500, wins:12,rarity:"Common"},
+];
+
 /* ═══ STATE ═══ */
 let S=null;
-const CK="gacha_v4";
-
-const fresh=()=>({coins:300,fish:10,stars:2,inventory:[],gearInv:[],cages:[],lastTick:Date.now()});
+const CK="gacha_v6";
+const fresh=()=>({coins:200,fish:5,stars:1,gems:0,inventory:[],gearInv:[],cages:[],raids:[],pvpWins:0,pvpLosses:0,pvpScore:0,lastTick:Date.now()});
 
 function ensure(){
-  if(!S.cages.length) S.cages.push({...CAGES[0],cats:[]});
-  if(!S.inventory.length) S.inventory.push(makePet(CATS[0]));
-  if(!S.gearInv) S.gearInv=[];
-  if(S.fish==null) S.fish=0;
-  if(S.stars==null) S.stars=0;
+  if(!S.cages.length)S.cages.push({...CAGES[0],cats:[]});
+  if(!S.inventory.length)S.inventory.push(makePet(CATS[0]));
+  if(!S.gearInv)S.gearInv=[];
+  if(S.fish==null)S.fish=0;
+  if(S.stars==null)S.stars=0;
+  if(S.gems==null)S.gems=0;
+  if(!S.raids)S.raids=[];
+  if(S.pvpWins==null){S.pvpWins=0;S.pvpLosses=0;S.pvpScore=0;}
 }
 
 function makePet(tpl){
-  return {uid:Date.now()+Math.random(),baseName:tpl.name,customName:null,emoji:tpl.emoji,rarity:tpl.rarity,baseIncome:tpl.income,fishRate:tpl.fishRate||1,sell:tpl.sell||10,level:1,xp:0,gear:{collar:null,hat:null,toy:null},favorite:false};
+  return {uid:Date.now()+Math.random(),baseName:tpl.name,customName:null,emoji:tpl.emoji,rarity:tpl.rarity,baseIncome:tpl.income,fishRate:tpl.fishRate||0.2,sell:tpl.sell||10,level:1,xp:0,gear:{collar:null,hat:null,toy:null},favorite:false,power:tpl.power||10,inRaid:false};
 }
 function petName(p){return p.customName||p.baseName}
-
-function petIncome(p,cageBonus=1){
+function petPower(p){
+  let gp=0;Object.values(p.gear||{}).forEach(gid=>{if(gid){const g=GEAR.find(x=>x.id===gid);if(g)gp+=g.power||0;}});
   const lv=p.level||1;
-  const lvM=1+(lv-1)*.18;
+  return Math.floor((p.power||10)*(1+(lv-1)*.15)+gp);
+}
+function petIncome(p,cageBonus=1){
+  const lv=p.level||1;const lvM=1+(lv-1)*.18;
   let gb=0;Object.values(p.gear||{}).forEach(gid=>{if(gid){const g=GEAR.find(x=>x.id===gid);if(g)gb+=g.bonus;}});
   return p.baseIncome*lvM*(1+gb)*cageBonus;
 }
 function petFish(p,cageBonus=1){
-  const lv=p.level||1;
-  const lvM=1+(lv-1)*.12;
-  return (p.fishRate||1)*lvM*cageBonus;
+  const lv=p.level||1;const lvM=1+(lv-1)*.12;
+  return (p.fishRate||0.2)*lvM*cageBonus;
 }
 
 /* ═══ CLOUD ═══ */
@@ -417,14 +519,15 @@ const cloudLoad=cb=>{
 function boot(loaded){
   S=loaded;
   if(!S){try{S=JSON.parse(localStorage.getItem(CK))}catch(e){}}
-  if(!S) S=fresh();
+  if(!S)S=fresh();
   S.inventory=(S.inventory||[]).map(migPet);
   S.cages=(S.cages||[]).map(c=>({...c,cats:(c.cats||[]).map(migPet)}));
   ensure();render();
-  setInterval(()=>{tick();updHdr();save();},4000);
+  setInterval(()=>{tick();updHdr();checkRaids();save();},3000);
+  setInterval(()=>render(),10000);
 }
 function migPet(p){
-  if(p.uid&&p.gear) return p;
+  if(p.uid&&p.gear)return p;
   const t=CATS.find(c=>c.name===(p.baseName||p.name))||CATS[0];
   return {...makePet(t),...p,uid:p.uid||(Date.now()+Math.random()),gear:p.gear||{collar:null,hat:null,toy:null}};
 }
@@ -445,36 +548,200 @@ function updHdr(){
   document.getElementById("coins").textContent=fmt(S.coins);
   document.getElementById("fish-count").textContent=fmt(S.fish);
   document.getElementById("star-count").textContent=fmt(S.stars);
+  document.getElementById("gem-count").textContent=fmt(S.gems);
 }
+
+/* ═══ RAIDS ═══ */
+function checkRaids(){
+  const now=Date.now();let changed=false;
+  S.raids=S.raids.filter(r=>r.endTime>now-5000||!r.claimed);
+  S.raids.forEach(r=>{
+    if(!r.done&&now>=r.endTime){r.done=true;changed=true;}
+  });
+  if(changed){save();if(cur===2)render();}
+}
+
+function openRaidModal(raidId){
+  const raid=RAIDS.find(r=>r.id===raidId);if(!raid)return;
+  H();
+  const allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid&&petPower(p)>=raid.minPow);
+  document.getElementById("raid-m-t").textContent=raid.emoji+" "+raid.name;
+  document.getElementById("raid-m-s").textContent=`Мин. сила: ${raid.minPow} · Время: ${fmtTime(raid.dur)}`;
+  const list=document.getElementById("raid-m-l");list.innerHTML="";
+  selectedRaidPetUid=null;
+  selectedRaidId=raidId;
+  if(!allPets.length){list.innerHTML=`<div class="empty"><span class="empty-ic">😿</span>Нет котов с достаточной силой (${raid.minPow}+)</div>`;document.getElementById("raid-m-go").disabled=true;}
+  else {
+    allPets.forEach(p=>{
+      const el=document.createElement("div");el.className="raid-pick";el.dataset.uid=p.uid;
+      el.innerHTML=`<span style="font-size:22px">${p.emoji}</span><div style="flex:1"><div style="font-size:13px;font-weight:600">${petName(p)}</div><div style="font-size:10px;opacity:.4">Сила: ${petPower(p)} · Ур.${p.level||1}</div></div><span class="rb ${p.rarity}">${p.rarity}</span>`;
+      el.onclick=()=>{
+        list.querySelectorAll(".raid-pick").forEach(e=>e.classList.remove("selected"));
+        el.classList.add("selected");selectedRaidPetUid=p.uid;
+        document.getElementById("raid-m-go").disabled=false;
+      };
+      list.appendChild(el);
+    });
+  }
+  document.getElementById("raid-m").classList.add("open");
+}
+let selectedRaidId=null,selectedRaidPetUid=null;
+function closeRaidM(){H('soft');document.getElementById("raid-m").classList.remove("open");selectedRaidId=null;selectedRaidPetUid=null;}
+function confirmRaid(){
+  if(!selectedRaidId||!selectedRaidPetUid)return;
+  const raid=RAIDS.find(r=>r.id===selectedRaidId);if(!raid)return;
+  // Mark pet as in raid
+  let pet=S.inventory.find(p=>p.uid===selectedRaidPetUid)||null;
+  let petSrc="inventory";
+  if(!pet){for(let ci=0;ci<S.cages.length;ci++){const xi=S.cages[ci].cats.findIndex(p=>p.uid===selectedRaidPetUid);if(xi!==-1){pet=S.cages[ci].cats[xi];petSrc="cage";break;}}}
+  if(!pet)return;
+  pet.inRaid=true;
+  const now=Date.now();
+  S.raids.push({uid:Date.now()+Math.random(),raidId:selectedRaidId,petUid:selectedRaidPetUid,petEmoji:pet.emoji,petName:petName(pet),startTime:now,endTime:now+raid.dur*1000,done:false,claimed:false});
+  HN('success');toast(`${pet.emoji} отправлен в ${raid.name}!`);
+  closeRaidM();save();render();
+}
+function claimRaid(raidUid){
+  const r=S.raids.find(x=>x.uid===raidUid);if(!r||!r.done||r.claimed)return;
+  const raidDef=RAIDS.find(x=>x.id===r.raidId);if(!raidDef)return;
+  const fish=raidDef.rewardFish[0]+Math.floor(Math.random()*(raidDef.rewardFish[1]-raidDef.rewardFish[0]));
+  const coins=raidDef.rewardCoins[0]+Math.floor(Math.random()*(raidDef.rewardCoins[1]-raidDef.rewardCoins[0]));
+  const gems=raidDef.rewardGem;
+  S.fish+=fish;S.coins+=coins;S.gems+=gems;
+  // Give XP to pet
+  let pet=S.inventory.find(p=>p.uid===r.petUid)||null;
+  if(!pet){for(const c of S.cages){const xi=c.cats.findIndex(p=>p.uid===r.petUid);if(xi!==-1){pet=c.cats[xi];break;}}}
+  if(pet){pet.inRaid=false;pet.xp=(pet.xp||0)+raidDef.xpGain;autoLevelUp(pet);}
+  r.claimed=true;
+  HN('success');toast(`🎉 +${fish}🐟 +${coins}💰${gems?` +${gems}💎`:""}`);
+  save();updHdr();render();
+}
+function autoLevelUp(pet){
+  const lv=pet.level||1;if(lv>=MAX_LEVEL)return;
+  const xpNeed=lv*80;
+  if((pet.xp||0)>=xpNeed){pet.level=lv+1;}
+}
+function fmtTime(sec){if(sec<60)return sec+"с";if(sec<3600)return Math.floor(sec/60)+"м";return Math.floor(sec/3600)+"ч "+Math.floor((sec%3600)/60)+"м";}
+function fmtTimeLeft(ms){const s=Math.max(0,Math.floor(ms/1000));return fmtTime(s);}
+
+/* ═══ PVP ═══ */
+function startPvP(){
+  // Pick strongest available cat
+  const allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)].filter(p=>!p.inRaid);
+  if(!allPets.length){toast("Нет котов для боя!");return;}
+  allPets.sort((a,b)=>petPower(b)-petPower(a));
+  const myPet=allPets[0];
+  const myPow=petPower(myPet);
+  const opp=PVP_OPPONENTS[Math.floor(Math.random()*PVP_OPPONENTS.length)];
+  H('heavy');
+  simulateBattle(myPet,myPow,opp);
+}
+function simulateBattle(myPet,myPow,opp){
+  // Simple simulation
+  let myHp=myPow*3,oppHp=opp.power*3;
+  const log=[];
+  let round=0;
+  while(myHp>0&&oppHp>0&&round<20){
+    round++;
+    const myDmg=Math.floor(myPow*(0.7+Math.random()*0.6));
+    const oppDmg=Math.floor(opp.power*(0.7+Math.random()*0.6));
+    oppHp-=myDmg;myHp-=oppDmg;
+    if(round<=4){
+      log.push(`Р${round}: ${myPet.emoji} атакует -${myDmg} HP | ${opp.emoji} атакует -${oppDmg} HP`);
+    }
+  }
+  const win=myHp>0;
+  if(win){S.pvpWins++;S.pvpScore+=Math.floor(opp.rating/10+10);const coins=Math.floor(opp.power*2);S.coins+=coins;HN('success');showBattleResult(myPet,opp,true,log,coins);}
+  else{S.pvpLosses++;S.pvpScore=Math.max(0,S.pvpScore-5);HN('error');showBattleResult(myPet,opp,false,log,0);}
+  // Update leaderboard
+  updateLB();save();
+}
+function updateLB(){
+  const uid="player";
+  const nm=tg?.initDataUnsafe?.user?.first_name||"Вы";
+  const idx=LEADERBOARD.findIndex(x=>x.uid===uid);
+  const entry={uid,name:nm,emoji:"😺",score:S.pvpScore,wins:S.pvpWins,rarity:"Common"};
+  if(idx!==-1)LEADERBOARD[idx]=entry;else LEADERBOARD.push(entry);
+  LEADERBOARD.sort((a,b)=>b.score-a.score);
+}
+function showBattleResult(myPet,opp,win,log,coinsGained){
+  const myPow=petPower(myPet);
+  document.getElementById("bov-content").innerHTML=`
+    <div style="font-size:28px;margin-bottom:8px">${win?"🏆":"😿"}</div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">${win?"Победа!":"Поражение"}</div>
+    <div style="font-size:11px;opacity:.4;margin-bottom:14px">${win?`+${coinsGained}💰 · +${Math.floor(opp.rating/10+10)} очков рейтинга`:"Попробуй снова с более сильным котом"}</div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div class="battle-fighter" style="flex:1">
+        <span class="battle-fighter-em">${myPet.emoji}</span>
+        <div style="font-size:11px;font-weight:600">${petName(myPet)}</div>
+        <div style="font-size:10px;opacity:.4">Сила: ${myPow}</div>
+        <div class="battle-hp"><div class="battle-hp-fill" style="width:${win?'30':'0'}%;background:linear-gradient(90deg,var(--acc2),var(--acc))"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:16px;font-weight:800;opacity:.4">VS</div>
+      <div class="battle-fighter" style="flex:1">
+        <span class="battle-fighter-em">${opp.emoji}</span>
+        <div style="font-size:11px;font-weight:600">${opp.name}</div>
+        <div style="font-size:10px;opacity:.4">Сила: ${opp.power}</div>
+        <div class="battle-hp"><div class="battle-hp-fill" style="width:${win?'0':'25'}%;background:linear-gradient(90deg,#ff5252,#ff8888)"></div></div>
+      </div>
+    </div>
+    <div class="battle-log">${log.join('<br>')}<br>${win?`💥 ${myPet.emoji} нанёс последний удар!`:`💀 ${opp.emoji} победил...`}</div>
+  `;
+  document.getElementById("bov").classList.add("vis");
+}
+function closeBov(){document.getElementById("bov").classList.remove("vis");render();}
 
 /* ═══ NAV ═══ */
 let cur=0;
-function go(i){H();cur=i;document.getElementById("car").style.transform=`translateX(-${i*25}%)`;document.querySelectorAll(".nb").forEach((b,j)=>b.classList.toggle("on",j===i));render();}
+function go(i){H();cur=i;document.getElementById("car").style.transform=`translateX(-${i*(100/6)}%)`;document.querySelectorAll(".nb").forEach((b,j)=>b.classList.toggle("on",j===i));render();}
 
 /* ═══ TOAST ═══ */
 let tT;
-function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(tT);tT=setTimeout(()=>el.classList.remove("show"),2200);}
+function toast(m){const el=document.getElementById("toast");el.textContent=m;el.classList.add("show");clearTimeout(tT);tT=setTimeout(()=>el.classList.remove("show"),2400);}
 
-/* ═══ ROLL ═══ */
+/* ═══ GACHA ROLL ═══ */
+let gachaMode="cat"; // "cat" or "gear"
+function setGachaMode(m){gachaMode=m;document.querySelectorAll(".gacha-tab").forEach(t=>t.classList.toggle("on",t.dataset.m===m));renderGachaInfo();}
+function renderGachaInfo(){
+  const box=document.getElementById("gacha-info-box");if(!box)return;
+  if(gachaMode==="cat"){
+    box.innerHTML=`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-bottom:6px">
+      <span class="rc" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Common 70%</span>
+      <span class="rr" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Rare 25%</span>
+      <span class="re" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Epic 4%</span>
+      <span class="rl" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Legendary 1%</span>
+    </div>
+    <div style="font-size:11px;opacity:.35">Legendary = +3⭐ · Цена: 50💰</div>`;
+  } else {
+    box.innerHTML=`<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:4px;margin-bottom:6px">
+      <span class="rc" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Common 65%</span>
+      <span class="rr" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Rare 28%</span>
+      <span class="re" style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;background:rgba(255,255,255,.06)">Epic 7%</span>
+    </div>
+    <div style="font-size:11px;opacity:.35">Только снаряжение · Цена: 🐟20 рыбы</div>`;
+  }
+}
+
 function roll(){
+  if(gachaMode==="gear"){rollGear();return;}
   if(S.coins<50){toast("Нужно 50💰");HN('error');return}
   S.coins-=50;H('medium');
-  if(Math.random()<.3){
-    const r=Math.random()*100;let cum=0,rar="Common";
-    for(const[k,w] of Object.entries(GEAR_WGT)){cum+=w;if(r<cum){rar=k;break}}
-    const pool=GEAR.filter(g=>g.rarity===rar);
-    const item={...pool[Math.floor(Math.random()*pool.length)],iid:Date.now()+Math.random()};
-    S.gearInv.push(item);save();render();showGovItem(item);
-  } else {
-    const r=Math.random()*100;let cum=0,rar="Common";
-    for(const[k,w] of Object.entries(CAT_WGT)){cum+=w;if(r<cum){rar=k;break}}
-    const pool=CATS.filter(c=>c.rarity===rar);
-    const pet=makePet(pool[Math.floor(Math.random()*pool.length)]);
-    // Шанс бонусных звёзд
-    if(rar==="Legendary"){S.stars+=3;toast("✨ +3 звезды за Legendary!");}
-    else if(rar==="Epic" && Math.random()<.4){S.stars+=1;}
-    S.inventory.push(pet);save();render();showGov(pet);
-  }
+  const r=Math.random()*100;let cum=0,rar="Common";
+  for(const[k,w] of Object.entries(CAT_WGT)){cum+=w;if(r<cum){rar=k;break}}
+  const pool=CATS.filter(c=>c.rarity===rar);
+  const pet=makePet(pool[Math.floor(Math.random()*pool.length)]);
+  if(rar==="Legendary"){S.stars+=3;toast("✨ +3 звезды за Legendary!");}
+  else if(rar==="Epic"&&Math.random()<.4){S.stars+=1;}
+  S.inventory.push(pet);save();showGov(pet);
+}
+function rollGear(){
+  if(S.fish<20){toast("Нужно 20🐟");HN('error');return}
+  S.fish-=20;H('medium');
+  const r=Math.random()*100;let cum=0,rar="Common";
+  for(const[k,w] of Object.entries(GEAR_WGT)){cum+=w;if(r<cum){rar=k;break}}
+  const pool=GEAR.filter(g=>g.rarity===rar);
+  const item={...pool[Math.floor(Math.random()*pool.length)],iid:Date.now()+Math.random()};
+  S.gearInv.push(item);save();showGovItem(item);
 }
 
 /* ═══ GACHA OVERLAY ═══ */
@@ -508,37 +775,32 @@ function _govShow(emoji,name,sub,rar,bounce){
   setTimeout(()=>spawnConf(rar),140);
   if(rar==="Legendary"){HN('success');setTimeout(()=>H('heavy'),180);setTimeout(()=>H('heavy'),400);}
   else if(rar==="Epic"){HN('success');setTimeout(()=>H('medium'),280);}
-  else if(rar==="Rare") HN('success');
+  else if(rar==="Rare")HN('success');
 }
-function showGov(pet){_govShow(pet.emoji,petName(pet),`+${petIncome(pet).toFixed(1)}💰/с`,pet.rarity,["Epic","Legendary"].includes(pet.rarity));}
-function showGovItem(item){_govShow(item.emoji,item.name,`+${Math.round(item.bonus*100)}% к доходу · ${item.slot}`,item.rarity,false);}
-function closeGov(){H('soft');document.getElementById("gov").classList.remove("vis");}
+function showGov(pet){_govShow(pet.emoji,petName(pet),`+${petIncome(pet).toFixed(2)}💰/с · ⚔️${petPower(pet)}`,pet.rarity,["Epic","Legendary"].includes(pet.rarity));}
+function showGovItem(item){_govShow(item.emoji,item.name,`+${Math.round(item.bonus*100)}% к доходу · ⚔️+${item.power||0}`,item.rarity,false);}
+function closeGov(){H('soft');document.getElementById("gov").classList.remove("vis");if(cur===1)render();else render();}
 
 /* ═══ PET PAGE ═══ */
-let PPR=null; // {where,ci,xi}
+let PPR=null;
 function getPet(){if(!PPR)return null;return PPR.where==="inventory"?S.inventory[PPR.ci]:S.cages[PPR.ci]?.cats[PPR.xi]||null;}
-
 function openPet(where,ci,xi){
   H();
   const pet=where==="inventory"?S.inventory[ci]:S.cages[ci].cats[xi];
   if(!pet)return;
-  PPR={where,ci,xi};
-  renderPP(pet);
+  PPR={where,ci,xi};renderPP(pet);
   document.getElementById("pet-page").classList.add("open");
 }
 function closePet(){H('soft');document.getElementById("pet-page").classList.remove("open");PPR=null;render();}
-
 function renderPP(pet){
   if(!pet)return;
   document.getElementById("pp-ttl").textContent=petName(pet);
   document.getElementById("pp-fav").textContent=pet.favorite?"❤️":"🤍";
-
   const lv=pet.level||1,isMax=lv>=MAX_LEVEL;
   const cost=lvCost(pet);
   const canFish=S.fish>=cost.fish;
   const canStar=!cost.stars||S.stars>=cost.stars;
   const canLv=canFish&&canStar&&!isMax;
-
   const SLOTS=[{key:"collar",label:"Ошейник",icon:"📿"},{key:"hat",label:"Шапка",icon:"🎩"},{key:"toy",label:"Игрушка",icon:"🎮"}];
   const eqH=SLOTS.map(sl=>{
     const gid=pet.gear?.[sl.key];const g=gid?GEAR.find(x=>x.id===gid):null;
@@ -549,13 +811,10 @@ function renderPP(pet){
       ${g?`<div class="eq-bonus">+${Math.round(g.bonus*100)}%</div>`:''}
     </div>`;
   }).join("");
-
-  const inc=petIncome(pet);const fish=petFish(pet);
+  const inc=petIncome(pet),fish=petFish(pet),pow=petPower(pet);
   let gb=0;Object.values(pet.gear||{}).forEach(gid=>{if(gid){const g=GEAR.find(x=>x.id===gid);if(g)gb+=g.bonus;}});
   const xpNeed=lv*80;const xpPct=Math.min(100,Math.round((pet.xp||0)/xpNeed*100));
-
   const rarC={Common:"var(--rc)",Rare:"var(--rr)",Epic:"var(--re)",Legendary:"var(--rl)"}[pet.rarity]||"#fff";
-
   document.getElementById("pp-body").innerHTML=`
     <div class="pet-hero" style="--glow:${GLOW[pet.rarity]||'transparent'}">
       <span class="pet-hero-em">${pet.emoji}</span>
@@ -567,18 +826,15 @@ function renderPP(pet){
         <span style="font-size:10px;opacity:.35">${pet.xp||0}/${xpNeed}</span>
       </div>
     </div>
-
     <div class="st">Характеристики</div>
     <div class="sg">
-      <div class="sb"><span class="sv">+${inc.toFixed(1)}💰</span><span class="sl">Доход/с</span></div>
-      <div class="sb"><span class="sv">+${fish.toFixed(1)}🐟</span><span class="sl">Рыба/с</span></div>
+      <div class="sb"><span class="sv">+${inc.toFixed(2)}💰</span><span class="sl">Доход/с</span></div>
+      <div class="sb"><span class="sv">+${fish.toFixed(2)}🐟</span><span class="sl">Рыба/с</span></div>
       <div class="sb"><span class="sv" style="color:${rarC}">${pet.rarity}</span><span class="sl">Редкость</span></div>
-      <div class="sb"><span class="sv">${gb>0?'+'+Math.round(gb*100)+'%':'—'}</span><span class="sl">Снаряжение</span></div>
+      <div class="sb"><span class="sv">⚔️${pow}</span><span class="sl">Сила</span></div>
     </div>
-
     <div class="st">Снаряжение</div>
     <div class="eq-grid">${eqH}</div>
-
     <div class="st">Прокачка</div>
     <div class="lvc">
       ${isMax?`<div style="text-align:center;padding:8px;font-size:13px;opacity:.45">🏆 Максимальный уровень!</div>`:`
@@ -586,18 +842,15 @@ function renderPP(pet){
           <span>Прогресс → Ур.${lv+1}</span><span>${xpPct}%</span>
         </div>
         <div class="xp-track"><div class="xp-t-fill" style="width:${xpPct}%"></div></div>
-        <div style="margin-top:11px;margin-bottom:8px">
-          <div class="lv-cost-row">
-            <span class="lv-cost-label">Стоимость прокачки</span>
-          </div>
+        <div style="margin-top:10px;margin-bottom:7px">
           <div class="res-cost-grid">
             <div class="res-cost-item ${canFish?'ok':'nok'}">
               <span class="rv">🐟 ${cost.fish}</span>
-              <span class="rl2">Нужно / есть: ${fmt(S.fish)}</span>
+              <span class="rl2">Есть: ${fmt(S.fish)}</span>
             </div>
             ${cost.stars>0?`<div class="res-cost-item ${canStar?'ok':'nok'}">
               <span class="rv">⭐ ${cost.stars}</span>
-              <span class="rl2">Нужно / есть: ${fmt(S.stars)}</span>
+              <span class="rl2">Есть: ${fmt(S.stars)}</span>
             </div>`:''}
           </div>
         </div>
@@ -606,13 +859,14 @@ function renderPP(pet){
         </button>
       `}
     </div>
-
     <div class="st">Действия</div>
-    ${PPR?.where==="inventory"?`
-      <button class="btn" onclick="openPlaceFromPP()">➕ Поместить в клетку</button>
-      <button class="btn red" onclick="sellFromPP()" style="margin-top:5px">💰 Продать за ${pet.sell}💰</button>
-    `:`
-      <button class="btn sec" onclick="removeCatFromPP()">↩ Вернуть в инвентарь</button>
+    ${pet.inRaid?`<div class="card" style="text-align:center;opacity:.5;font-size:13px">⚔️ Кот в рейде</div>`:`
+      ${PPR?.where==="inventory"?`
+        <button class="btn" onclick="openPlaceFromPP()">➕ Поместить в клетку</button>
+        <button class="btn red" onclick="sellFromPP()" style="margin-top:5px">💰 Продать за ${pet.sell}💰</button>
+      `:`
+        <button class="btn sec" onclick="removeCatFromPP()">↩ Вернуть в инвентарь</button>
+      `}
     `}
   `;
 }
@@ -626,7 +880,6 @@ function levelUp(){
   S.fish-=cost.fish;S.stars-=cost.stars;
   pet.xp=(pet.xp||0)+lv*80;pet.level=lv+1;
   H('heavy');HN('success');
-  // Flash animation
   const fl=document.createElement("div");fl.className="lvl-flash";fl.textContent="⬆️";document.body.appendChild(fl);setTimeout(()=>fl.remove(),900);
   toast(`🎉 ${petName(pet)} → Уровень ${pet.level}!`);
   save();renderPP(pet);updHdr();
@@ -648,7 +901,7 @@ function toggleFav(){
   const pet=getPet();if(!pet)return;
   pet.favorite=!pet.favorite;H();save();
   document.getElementById("pp-fav").textContent=pet.favorite?"❤️":"🤍";
-  toast(pet.favorite?"❤️ Добавлен в избранные":"Убран из избранных");
+  toast(pet.favorite?"❤️ В избранные":"Убран из избранных");
 }
 
 /* ═══ EQUIP MODAL ═══ */
@@ -660,17 +913,16 @@ function openEM(slot){
   document.getElementById("em-s").textContent="Снаряжение в инвентаре";
   const avail=S.gearInv.filter(g=>g.slot===slot);
   const list=document.getElementById("em-l");list.innerHTML="";
-  if(!avail.length){
-    list.innerHTML=`<div class="empty"><span class="empty-ic">🎁</span>Нет снаряжения типа "${slN}".<br>Крути гачу!</div>`;
-  } else {
+  if(!avail.length){list.innerHTML=`<div class="empty"><span class="empty-ic">🎁</span>Нет снаряжения типа "${slN}".<br>Крути гачу снаряжения!</div>`;}
+  else{
     avail.forEach(item=>{
       const el=document.createElement("div");el.className="eqi";
-      el.innerHTML=`<div class="eqi-em">${item.emoji}</div><div class="eqi-info"><div class="eqi-name">${item.name} <span class="rb ${item.rarity}">${item.rarity}</span></div><div class="eqi-sub">${slN}</div><div class="eqi-eq">+${Math.round(item.bonus*100)}% к доходу</div></div>`;
+      el.innerHTML=`<div class="eqi-em">${item.emoji}</div><div class="eqi-info"><div class="eqi-name">${item.name} <span class="rb ${item.rarity}">${item.rarity}</span></div><div class="eqi-sub">${slN} · ⚔️+${item.power||0}</div><div class="eqi-eq">+${Math.round(item.bonus*100)}% к доходу</div></div>`;
       el.onclick=()=>equipItem(item.iid);list.appendChild(el);
     });
   }
-  const cur=pet.gear?.[slot];
-  if(cur){const g=GEAR.find(x=>x.id===cur);if(g){const un=document.createElement("button");un.className="btn red";un.style.marginTop="8px";un.textContent=`Снять ${g.name}`;un.onclick=()=>unequip(slot);list.appendChild(un);}}
+  const curG=pet.gear?.[slot];
+  if(curG){const g=GEAR.find(x=>x.id===curG);if(g){const un=document.createElement("button");un.className="btn red";un.style.marginTop="8px";un.textContent=`Снять ${g.name}`;un.onclick=()=>unequip(slot);list.appendChild(un);}}
   document.getElementById("em").classList.add("open");
 }
 function closeEM(){H('soft');document.getElementById("em").classList.remove("open");eqSlot=null;}
@@ -697,18 +949,18 @@ function openPlaceFromPP(){const pet=getPet();if(!pet)return;openPM(pet);}
 function openPM(pet){
   H();placePet=pet;
   document.getElementById("pm-t").textContent=`${pet.emoji} ${petName(pet)}`;
-  document.getElementById("pm-s").textContent=`${pet.rarity} · +${petIncome(pet).toFixed(1)}💰/с · +${petFish(pet).toFixed(1)}🐟/с`;
+  document.getElementById("pm-s").textContent=`${pet.rarity} · ⚔️${petPower(pet)}`;
   const list=document.getElementById("pm-l");list.innerHTML="";let any=false;
   S.cages.forEach((cage,ci)=>{
     const ok=cage.allowed.includes(pet.rarity)&&cage.cats.length<cage.slots;
     if(ok)any=true;
     const el=document.createElement("div");el.className="cop "+(ok?"av":"dim");
-    const hint=!cage.allowed.includes(pet.rarity)?"Не принимает эту редкость":cage.cats.length>=cage.slots?"Клетка заполнена":`×${cage.bonus} → +${petIncome(pet,cage.bonus).toFixed(1)}💰/с`;
+    const hint=!cage.allowed.includes(pet.rarity)?"Не принимает эту редкость":cage.cats.length>=cage.slots?"Клетка заполнена":`×${cage.bonus} → +${petIncome(pet,cage.bonus).toFixed(2)}💰/с`;
     el.innerHTML=`<div class="cop-em">${cage.emoji}</div><div class="cop-info"><b>${cage.name}</b><small>${hint}</small></div><div class="cob">${cage.cats.length}/${cage.slots}</div>`;
     if(ok)el.onclick=()=>confirmPM(ci);
     list.appendChild(el);
   });
-  if(!any)list.innerHTML+=`<div class="empty"><span class="empty-ic">🔒</span>Нет подходящей клетки.<br>Купи в магазине!</div>`;
+  if(!any)list.innerHTML+=`<div class="empty"><span class="empty-ic">🔒</span>Нет подходящей клетки.</div>`;
   document.getElementById("pm").classList.add("open");
 }
 function confirmPM(ci){
@@ -722,8 +974,8 @@ function confirmPM(ci){
 function closePM(){H('soft');document.getElementById("pm").classList.remove("open");placePet=null;}
 
 /* ═══ REMOVE / SELL ═══ */
-function removeCat(ci,xi){const cat=S.cages[ci].cats.splice(xi,1)[0];S.inventory.push({...cat});H('soft');toast(`${petName(cat)} → инвентарь`);save();render();}
-function removeCatFromPP(){if(!PPR||PPR.where!=="cage")return;const cat=S.cages[PPR.ci].cats.splice(PPR.xi,1)[0];S.inventory.push({...cat});H('soft');toast(`${petName(cat)} → инвентарь`);save();closePet();}
+function removeCat(ci,xi){const cat=S.cages[ci].cats.splice(xi,1)[0];cat.inRaid=false;S.inventory.push({...cat});H('soft');toast(`${petName(cat)} → инвентарь`);save();render();}
+function removeCatFromPP(){if(!PPR||PPR.where!=="cage")return;const cat=S.cages[PPR.ci].cats.splice(PPR.xi,1)[0];cat.inRaid=false;S.inventory.push({...cat});H('soft');toast(`${petName(cat)} → инвентарь`);save();closePet();}
 function sellPet(uid){const idx=S.inventory.findIndex(p=>p.uid==uid);if(idx===-1)return;const p=S.inventory.splice(idx,1)[0];S.coins+=p.sell||10;H('medium');toast(`${p.emoji} ${petName(p)} продан за ${p.sell}💰`);save();render();}
 function sellFromPP(){if(!PPR||PPR.where!=="inventory")return;const p=S.inventory[PPR.ci];S.coins+=p.sell||10;S.inventory.splice(PPR.ci,1);H('medium');toast(`${p.emoji} ${petName(p)} продан`);save();closePet();}
 function sellGear(iid){const idx=S.gearInv.findIndex(g=>g.iid==iid);if(idx===-1)return;const g=S.gearInv.splice(idx,1)[0];S.coins+=g.sell||5;H('medium');toast(`${g.emoji} ${g.name} продан за ${g.sell}💰`);save();render();}
@@ -731,7 +983,6 @@ function sellGear(iid){const idx=S.gearInv.findIndex(g=>g.iid==iid);if(idx===-1)
 /* ═══ BUY CAGE ═══ */
 function buyCage(id){
   const tpl=CAGES.find(c=>c.id===id);if(!tpl)return;
-  if(id==="wood"&&S.cages.find(c=>c.id===id)){toast("Стартовая уже есть!");return}
   if(S.coins<tpl.price){toast(`Нужно ${tpl.price}💰`);HN('error');return}
   S.coins-=tpl.price;S.cages.push({...tpl,cats:[]});HN('success');toast(`${tpl.emoji} ${tpl.name} куплена!`);save();render();
 }
@@ -744,7 +995,7 @@ function render(){
   /* HOME */
   const co=totalCoins(),fi=totalFish();
   let h=`<div class="st">Мои клетки</div>`;
-  if(co>0||fi>0) h+=`<div class="incb"><div class="incb-left"><div class="lbl">Пассивный доход</div><div class="val">+${co.toFixed(1)}💰/с</div></div><div class="incb-resources"><div class="res-tag" style="color:var(--fish)">🐟+${fi.toFixed(1)}/с</div></div></div>`;
+  if(co>0||fi>0)h+=`<div class="incb"><div class="incb-left"><div class="lbl">Пассивный доход</div><div class="val">+${co.toFixed(2)}💰/с</div></div><div class="incb-resources"><div class="res-tag" style="color:var(--fish)">🐟+${fi.toFixed(2)}/с</div></div></div>`;
   h+=S.cages.map((cage,ci)=>{
     const b=cage.bonus||1;
     const sbar=Array.from({length:cage.slots},(_,i)=>{const c=cage.cats[i];return`<div class="sl${c?" f "+c.rarity:""}"></div>`}).join("");
@@ -752,19 +1003,19 @@ function render(){
       ?cage.cats.map((p,xi)=>`<div class="crow" onclick="openPet('cage',${ci},${xi})">
           <div class="crow-em">${p.emoji}</div>
           <div class="crow-info">
-            <div class="crow-name">${p.favorite?'❤️ ':''} ${petName(p)}</div>
-            <div class="crow-sub">+${petIncome(p,b).toFixed(1)}💰 +${petFish(p,b).toFixed(1)}🐟/с</div>
+            <div class="crow-name">${p.inRaid?'⚔️ ':p.favorite?'❤️ ':''} ${petName(p)}</div>
+            <div class="crow-sub">+${petIncome(p,b).toFixed(2)}💰 +${petFish(p,b).toFixed(2)}🐟/с · ⚔️${petPower(p)}</div>
           </div>
           <div class="crow-lv">Ур.${p.level||1}</div>
           <button class="crow-btn" onclick="event.stopPropagation();removeCat(${ci},${xi})">↩</button>
         </div>`).join("")
-      :`<div style="text-align:center;padding:12px 0 4px;font-size:12px;opacity:.28">🐾 Пусто</div>`;
+      :`<div style="text-align:center;padding:10px 0 4px;font-size:12px;opacity:.28">🐾 Пусто</div>`;
     const cInc=cage.cats.reduce((s,p)=>s+petIncome(p,b),0);
     const cFish=cage.cats.reduce((s,p)=>s+petFish(p,b),0);
     return `<div class="card cc ${cage.rarity}">
       <div class="cstr"></div>
       <div class="ch">
-        <div class="chl"><span style="font-size:21px">${cage.emoji}</span>
+        <div class="chl"><span style="font-size:19px">${cage.emoji}</span>
           <div><div style="font-size:13px;font-weight:700">${cage.name}</div>
           <div style="margin-top:2px"><span class="rb ${cage.rarity}">${RL[cage.rarity]}</span></div></div>
         </div>
@@ -772,37 +1023,139 @@ function render(){
       </div>
       <div class="sbar">${sbar}</div>
       ${catsH}
-      ${cInc>0?`<div class="cage-foot"><span style="font-size:10px;opacity:.35">Доход</span><span style="font-size:12px;font-weight:700;color:var(--acc2)">+${cInc.toFixed(1)}💰 +${cFish.toFixed(1)}🐟/с</span></div>`:""}
+      ${cInc>0?`<div class="cage-foot"><span style="font-size:10px;opacity:.35">Доход</span><span style="font-size:12px;font-weight:700;color:var(--acc2)">+${cInc.toFixed(2)}💰 +${cFish.toFixed(2)}🐟/с</span></div>`:""}
     </div>`;
   }).join("");
   document.getElementById("s0").innerHTML=h;
 
   /* GACHA */
   document.getElementById("s1").innerHTML=`
-    <div class="st">Крути барабан</div>
     <div class="ghero">
       <span class="gi">🎰</span>
-      <div class="gcp">
-        <span class="rc">Common 70%</span><span class="rr">Rare 25%</span>
-        <span class="re">Epic 4%</span><span class="rl">Legendary 1%</span>
+      <div class="gacha-tabs">
+        <button class="gacha-tab ${gachaMode==="cat"?"on":""}" data-m="cat" onclick="setGachaMode('cat')">🐱 Гача котов</button>
+        <button class="gacha-tab ${gachaMode==="gear"?"on":""}" data-m="gear" onclick="setGachaMode('gear')">⚙️ Гача снаряжения</button>
       </div>
-      <div style="font-size:11px;opacity:.35;margin-bottom:12px">30% шанс снаряжения · Legendary = +3⭐</div>
-      <button class="btn" onclick="roll()">🎰 Крутить — 50💰</button>
+      <div class="gacha-info-box" id="gacha-info-box"></div>
+      <button class="btn ${gachaMode==="gear"?"gear-btn":""}" onclick="roll()">${gachaMode==="cat"?"🎰 Крутить — 50💰":"⚙️ Крутить — 20🐟"}</button>
     </div>
     <div class="st">Коты</div>
-    ${CATS.map(c=>`<div class="cli" style="--c:${RC[c.rarity]}"><span style="font-size:24px">${c.emoji}</span><div style="flex:1"><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:10px;opacity:.38">+${c.income}💰/с · 🐟${c.fishRate}/с</div></div><span class="rb ${c.rarity}">${c.rarity}</span></div>`).join("")}
+    ${CATS.map(c=>`<div class="cli" style="--c:${RC[c.rarity]}"><span style="font-size:22px">${c.emoji}</span><div style="flex:1"><div style="font-weight:600;font-size:13px">${c.name}</div><div style="font-size:10px;opacity:.38">+${c.income}💰/с · 🐟${c.fishRate}/с · ⚔️${c.power}</div></div><span class="rb ${c.rarity}">${c.rarity}</span></div>`).join("")}
     <div class="st">Снаряжение</div>
-    ${GEAR.map(g=>`<div class="cli" style="--c:${RC[g.rarity]}"><span style="font-size:22px">${g.emoji}</span><div style="flex:1"><div style="font-weight:600;font-size:13px">${g.name}</div><div style="font-size:10px;opacity:.38">+${Math.round(g.bonus*100)}% · ${{collar:"ошейник",hat:"шапка",toy:"игрушка"}[g.slot]}</div></div><span class="rb ${g.rarity}">${g.rarity}</span></div>`).join("")}`;
+    ${GEAR.map(g=>`<div class="cli" style="--c:${RC[g.rarity]}"><span style="font-size:20px">${g.emoji}</span><div style="flex:1"><div style="font-weight:600;font-size:13px">${g.name}</div><div style="font-size:10px;opacity:.38">+${Math.round(g.bonus*100)}% · ⚔️+${g.power} · ${{collar:"ошейник",hat:"шапка",toy:"игрушка"}[g.slot]}</div></div><span class="rb ${g.rarity}">${g.rarity}</span></div>`).join("")}
+  `;
+  setTimeout(renderGachaInfo,0);
+
+  /* RAIDS */
+  const now=Date.now();
+  const allPets=[...S.inventory,...S.cages.flatMap(c=>c.cats)];
+  const maxPow=allPets.reduce((m,p)=>Math.max(m,petPower(p)),0);
+  let raidH=`
+    <div class="raid-hero">
+      <div class="raid-title">⚔️ Рейды и PvP</div>
+      <div class="raid-sub">Отправляй котов в рейды за ресурсами или сражайся с другими игроками</div>
+    </div>
+    <div class="st">Активные рейды</div>
+  `;
+  const activeRaids=S.raids.filter(r=>!r.claimed);
+  if(!activeRaids.length)raidH+=`<div class="card" style="text-align:center;font-size:12px;opacity:.35;padding:16px">Нет активных рейдов</div>`;
+  else activeRaids.forEach(r=>{
+    const left=r.endTime-now;
+    const total=r.endTime-r.startTime;
+    const pct=Math.min(100,Math.max(0,Math.round((1-left/total)*100)));
+    const raidDef=RAIDS.find(x=>x.id===r.raidId)||{};
+    raidH+=`<div class="raid-card ${r.done?'done':'active'}">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:700">${raidDef.emoji||"⚔️"} ${raidDef.name||r.raidId}</div>
+        ${r.done?`<button class="btn" style="width:auto;padding:5px 13px;font-size:12px;margin:0" onclick="claimRaid(${r.uid})">Забрать!</button>`:`<div class="raid-timer">${fmtTimeLeft(left)}</div>`}
+      </div>
+      <div style="font-size:11px;opacity:.4;margin-top:3px">${r.petEmoji} ${r.petName}</div>
+      ${r.done?`<div class="raid-reward">✅ Рейд завершён!</div>`:`<div class="raid-prog"><div class="raid-prog-fill" style="width:${pct}%"></div></div>`}
+    </div>`;
+  });
+  raidH+=`<div class="st">Зоны рейдов</div>`;
+  RAIDS.forEach(raid=>{
+    const locked=maxPow<raid.minPow;
+    const inProgress=S.raids.some(r=>r.raidId===raid.id&&!r.claimed);
+    raidH+=`<div class="raid-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <div>
+          <div style="font-size:14px;font-weight:700">${raid.emoji} ${raid.name}</div>
+          <div style="font-size:10px;opacity:.4;margin-top:2px">${raid.desc} · ⏱${fmtTime(raid.dur)}</div>
+        </div>
+        <div style="text-align:right;font-size:10px;opacity:.5">
+          <div>Мин. сила: ⚔️${raid.minPow}</div>
+          <div style="color:var(--acc2)">XP: +${raid.xpGain}</div>
+        </div>
+      </div>
+      <div class="raid-reward">🎁 🐟${raid.rewardFish[0]}-${raid.rewardFish[1]} · 💰${raid.rewardCoins[0]}-${raid.rewardCoins[1]}${raid.rewardGem?` · 💎${raid.rewardGem}`:''}</div>
+      <button class="btn raid-btn" style="margin-top:8px" onclick="openRaidModal('${raid.id}')" ${locked||inProgress?'disabled':''}>
+        ${locked?`🔒 Нужно ⚔️${raid.minPow}`:inProgress?`⏳ В процессе`:`⚔️ Начать рейд`}
+      </button>
+    </div>`;
+  });
+  raidH+=`
+    <div class="st">PvP Бой</div>
+    <div class="battle-arena">
+      <div style="font-size:14px;font-weight:800;margin-bottom:3px">⚔️ Сражение с игроками</div>
+      <div style="font-size:11px;opacity:.4;margin-bottom:10px">Сильнейший кот бросает вызов случайному сопернику</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px">
+        <span style="color:var(--acc2)">🏆 Победы: ${S.pvpWins}</span>
+        <span style="color:#ff8888">💀 Поражения: ${S.pvpLosses}</span>
+        <span style="color:var(--rl)">⭐ Рейтинг: ${S.pvpScore}</span>
+      </div>
+      <button class="btn" onclick="startPvP()">⚔️ Начать бой!</button>
+    </div>
+  `;
+  document.getElementById("s2").innerHTML=raidH;
+
+  /* LEADERBOARD */
+  updateLB();
+  const playerName=tg?.initDataUnsafe?.user?.first_name||"Вы";
+  const playerIdx=LEADERBOARD.findIndex(x=>x.uid==="player");
+  const playerPos=playerIdx!==-1?playerIdx+1:LEADERBOARD.length+1;
+  const medals=["🥇","🥈","🥉"];
+  const lbColors=["#ffd54f","#b0bec5","#cd7f32","#4fc3f7","#9e9e9e"];
+  let lbH=`
+    <div class="lb-hero">
+      <div style="font-size:28px;margin-bottom:4px">🏆</div>
+      <div style="font-size:16px;font-weight:800">Таблица лидеров</div>
+      <div style="font-size:11px;opacity:.4;margin-top:2px">Топ по PvP рейтингу</div>
+    </div>
+    ${playerIdx===-1||playerIdx>4?`
+    <div class="you-row">
+      <div style="font-size:16px;font-weight:800;width:28px;text-align:center">#${playerPos}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">😺 ${playerName} (Вы)</div>
+      <div style="font-size:10px;opacity:.38">Очков: ${S.pvpScore} · Побед: ${S.pvpWins}</div></div>
+      <div style="font-size:13px;font-weight:800;color:var(--rl)">${S.pvpScore}</div>
+    </div>`:""}
+    <div class="st">Топ-10</div>
+  `;
+  LEADERBOARD.slice(0,10).forEach((p,i)=>{
+    const isYou=p.uid==="player";
+    const lc=lbColors[Math.min(i,lbColors.length-1)];
+    lbH+=`<div class="lb-row" style="--lc:${lc}${isYou?";background:rgba(91,140,255,.06)":""}">
+      <div class="lb-rank">${medals[i]||`#${i+1}`}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.emoji} ${p.name}${isYou?" (Вы)":""}</div>
+        <div class="lb-sub">Побед: ${p.wins} · ${p.rarity}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <div class="lb-score">${p.score}</div>
+      </div>
+    </div>`;
+  });
+  document.getElementById("s3").innerHTML=lbH;
 
   /* SHOP */
   const cc={};S.cages.forEach(c=>{cc[c.id]=(cc[c.id]||0)+1});
-  document.getElementById("s2").innerHTML=`<div class="st">Магазин клеток</div>`+
+  document.getElementById("s4").innerHTML=`<div class="st">Магазин клеток</div>`+
     CAGES.map(cage=>{
       const cnt=cc[cage.id]||0,ok=S.coins>=cage.price;
-      return `<div class="card cc ${cage.rarity}" style="padding-top:17px">
+      return `<div class="card cc ${cage.rarity}" style="padding-top:16px">
         <div class="cstr"></div>
         <div class="ch">
-          <div class="chl"><span style="font-size:21px">${cage.emoji}</span>
+          <div class="chl"><span style="font-size:19px">${cage.emoji}</span>
             <div><div style="font-size:13px;font-weight:700">${cage.name}</div>
             <div style="margin-top:2px"><span class="rb ${cage.rarity}">${RL[cage.rarity]}</span></div></div>
           </div>
@@ -813,10 +1166,10 @@ function render(){
           <div class="sv"><span class="v">×${cage.bonus.toFixed(1)}</span><span class="l">Бонус</span></div>
           <div class="sv"><span class="v" style="font-size:9px;line-height:1.4">${cage.allowed.slice(0,3).join(",")}</span><span class="l">Коты</span></div>
         </div>
-        <div style="font-size:11px;opacity:.35;margin-bottom:8px">${cage.desc}</div>
+        <div style="font-size:11px;opacity:.35;margin-bottom:7px">${cage.desc}</div>
         ${cage.price===0
-          ?`<button class="btn sec" disabled>${cnt?"Стартовая":""}</button>`
-          :`<button class="btn" onclick="buyCage('${cage.id}')" ${ok?'':'style="opacity:.5"'}>${ok?"🛒 Купить за":"🔒"} ${cage.price}💰${cnt?` <span style="opacity:.5;font-size:11px">(ещё)</span>`:""}</button>`}
+          ?`<button class="btn sec" disabled>${cnt?"Стартовая клетка":""}</button>`
+          :`<button class="btn" onclick="buyCage('${cage.id}')" ${ok?'':'style="opacity:.5"'}>${ok?"🛒 Купить за":"🔒"} ${fmt(cage.price)}💰${cnt?` <span style="opacity:.5;font-size:11px">(ещё)</span>`:""}</button>`}
       </div>`;
     }).join("");
 
@@ -824,7 +1177,7 @@ function render(){
   const hasPets=S.inventory.length>0,hasGear=S.gearInv.length>0;
   let inv="";
   if(!hasPets&&!hasGear){inv=`<div class="empty"><span class="empty-ic">📦</span>Инвентарь пуст.</div>`;}
-  else {
+  else{
     if(hasPets){
       inv+=`<div class="st">Коты (${S.inventory.length})</div>`;
       const ord={Legendary:0,Epic:1,Rare:2,Common:3};
@@ -835,9 +1188,9 @@ function render(){
       inv+=sorted.map(p=>`<div class="ii ${p.rarity}" style="--c:${RC[p.rarity]}" onclick="openPet('inventory',S.inventory.indexOf(p),-1)">
         <div class="ii-em">${p.emoji}</div>
         <div class="ii-info">
-          <div class="ii-name">${p.favorite?'❤️ ':''} ${petName(p)}</div>
+          <div class="ii-name">${p.inRaid?'⚔️ ':p.favorite?'❤️ ':''} ${petName(p)}</div>
           <div class="ii-sub">
-            <span style="font-size:10px;opacity:.42">+${petIncome(p).toFixed(1)}💰 🐟${petFish(p).toFixed(1)}/с</span>
+            <span style="font-size:10px;opacity:.42">+${petIncome(p).toFixed(2)}💰 · ⚔️${petPower(p)}</span>
             <span class="rb ${p.rarity}">${p.rarity}</span>
             <span style="font-size:9px;opacity:.35">Ур.${p.level||1}</span>
           </div>
@@ -858,6 +1211,7 @@ function render(){
             <span style="font-size:10px;color:var(--acc2)">+${Math.round(g.bonus*100)}%</span>
             <span class="rb ${g.rarity}">${g.rarity}</span>
             <span style="font-size:9px;opacity:.35">${{collar:"Ошейник",hat:"Шапка",toy:"Игрушка"}[g.slot]}</span>
+            <span style="font-size:9px;color:var(--rr)">⚔️+${g.power||0}</span>
           </div>
         </div>
         <div class="iac">
@@ -866,7 +1220,7 @@ function render(){
       </div>`).join("");
     }
   }
-  document.getElementById("s3").innerHTML=inv;
+  document.getElementById("s5").innerHTML=inv;
 }
 
 /* ═══ SWIPE ═══ */
@@ -875,7 +1229,7 @@ document.body.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.tou
 document.body.addEventListener("touchend",e=>{
   if(document.getElementById("pet-page").classList.contains("open"))return;
   const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
-  if(Math.abs(dx)>54&&Math.abs(dx)>Math.abs(dy)*1.4){if(dx<0&&cur<3)go(cur+1);if(dx>0&&cur>0)go(cur-1);}
+  if(Math.abs(dx)>54&&Math.abs(dx)>Math.abs(dy)*1.4){if(dx<0&&cur<5)go(cur+1);if(dx>0&&cur>0)go(cur-1);}
 },{passive:true});
 
 /* ═══ START ═══ */
