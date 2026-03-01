@@ -83,3 +83,147 @@
 
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Gacha Cats</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body {
+  background: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 15px;
+}
+h2 { margin-top: 10px; }
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 16px;
+}
+.card {
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+}
+.cat {
+  display: flex;
+  justify-content: space-between;
+}
+.small { font-size: 14px; opacity: 0.7; }
+</style>
+</head>
+
+<body>
+
+<h2>🐱 GACHA CATS</h2>
+<div id="user"></div>
+<div>💰 Монеты: <b id="coins">0</b></div>
+<div class="small">+<span id="income">0</span>/сек</div>
+
+<button onclick="rollGacha()">🎰 Гача (100 монет)</button>
+
+<div class="card">
+<h3>🧺 Клетки</h3>
+<button onclick="buyCage(1)">Малая клетка (300)</button>
+<button onclick="buyCage(2)">Средняя клетка (700)</button>
+<button onclick="buyCage(3)">Большая клетка (1500)</button>
+<div class="small">Клетки: <span id="cages">0</span></div>
+</div>
+
+<div class="card">
+<h3>🎒 Инвентарь</h3>
+<div id="inventory"></div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const cats = [
+ {name:"Обычный кот", income:1, chance:40},
+ {name:"Серый кот", income:2, chance:20},
+ {name:"Рыжий кот", income:3, chance:15},
+ {name:"Полосатый кот", income:4, chance:10},
+ {name:"Неоновый кот", income:6, chance:6},
+ {name:"Кибер-кот", income:8, chance:4},
+ {name:"Самурай-кот", income:10, chance:2},
+ {name:"Демон-кот", income:14, chance:1.5},
+ {name:"Ангел-кот", income:18, chance:1},
+ {name:"Легендарный кот", income:25, chance:0.5}
+];
+
+let data = JSON.parse(localStorage.getItem("gacha")) || {
+  coins: 500,
+  cages: 1,
+  inventory: []
+};
+
+function save() {
+  localStorage.setItem("gacha", JSON.stringify(data));
+}
+
+function updateUI() {
+  document.getElementById("coins").innerText = Math.floor(data.coins);
+  document.getElementById("cages").innerText = data.cages;
+
+  let income = data.inventory.reduce((a,c)=>a+c.income,0);
+  document.getElementById("income").innerText = income;
+
+  const inv = document.getElementById("inventory");
+  inv.innerHTML = data.inventory.length ? "" : "<div class='small'>Пусто</div>";
+
+  data.inventory.forEach(cat=>{
+    const d = document.createElement("div");
+    d.className = "cat";
+    d.innerHTML = `<span>${cat.name}</span><span>+${cat.income}/с</span>`;
+    inv.appendChild(d);
+  });
+}
+
+function rollGacha() {
+  if (data.coins < 100) return alert("Не хватает монет");
+  if (data.inventory.length >= data.cages) return alert("Нет свободных клеток");
+
+  data.coins -= 100;
+  let roll = Math.random()*100;
+  let sum = 0;
+
+  for (let c of cats) {
+    sum += c.chance;
+    if (roll <= sum) {
+      data.inventory.push(c);
+      alert("Ты получил: " + c.name);
+      break;
+    }
+  }
+  save(); updateUI();
+}
+
+function buyCage(type) {
+  const prices = {1:300, 2:700, 3:1500};
+  if (data.coins < prices[type]) return alert("Не хватает монет");
+  data.coins -= prices[type];
+  data.cages += type;
+  save(); updateUI();
+}
+
+setInterval(()=>{
+  let income = data.inventory.reduce((a,c)=>a+c.income,0);
+  data.coins += income;
+  updateUI();
+  save();
+},1000);
+
+const user = tg.initDataUnsafe.user;
+if (user) document.getElementById("user").innerText = "👤 " + user.first_name;
+
+updateUI();
+</script>
+
+</body>
+</html>
