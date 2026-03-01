@@ -4,58 +4,110 @@
 <meta charset="UTF-8">
 <title>Gacha Cats</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
-body{
-  background:var(--tg-theme-bg-color);
-  color:var(--tg-theme-text-color);
-  font-family:Arial,sans-serif;
-  margin:0;
-  padding:10px;
+:root{
+  --accent:#5b8cff;
+  --accent2:#7cf5c8;
+  --danger:#ff6b6b;
 }
-h1,h2{text-align:center;}
+
+body{
+  background:linear-gradient(180deg,
+    var(--tg-theme-bg-color),
+    rgba(0,0,0,0.03));
+  color:var(--tg-theme-text-color);
+  font-family:Inter,Arial,sans-serif;
+  margin:0;
+  padding:14px 14px 80px;
+}
+
+h1,h2{text-align:center;margin:10px 0;}
+
+.balance{
+  text-align:center;
+  font-size:22px;
+  font-weight:600;
+}
+
+.card{
+  background:var(--tg-theme-secondary-bg-color,#1f1f1f);
+  border-radius:18px;
+  padding:14px;
+  margin:12px 0;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+
 button{
   width:100%;
-  padding:12px;
-  margin:6px 0;
+  padding:14px;
+  border:none;
+  border-radius:20px;
   font-size:16px;
+  font-weight:600;
+  margin-top:8px;
+  cursor:pointer;
+  color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
 }
-.card{
-  border:1px solid #555;
-  border-radius:8px;
-  padding:10px;
-  margin:8px 0;
+
+button.secondary{
+  background:linear-gradient(135deg,#666,#999);
 }
+
+button.danger{
+  background:linear-gradient(135deg,var(--danger),#ff9a9a);
+}
+
+.small{opacity:.7;font-size:14px;}
+.hidden{display:none;}
+
 .menu{
   position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
+  bottom:0;left:0;right:0;
   display:flex;
-  border-top:1px solid #555;
   background:var(--tg-theme-bg-color);
+  border-top:1px solid rgba(255,255,255,.1);
 }
+
 .menu button{
   flex:1;
   border-radius:0;
-  margin:0;
+  font-size:14px;
+  padding:12px 0;
 }
-.hidden{display:none;}
-.small{opacity:.7;font-size:14px;}
-.cat{margin-left:10px;}
+
+/* Лидерборд */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+th,td{
+  padding:10px;
+  text-align:center;
+}
+th{
+  opacity:.7;
+}
+tr{
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
 </style>
 </head>
 
 <body>
 
 <h1>🐱 Gacha Cats</h1>
-<h2>💰 <span id="coins">0</span></h2>
+<div class="balance">💰 <span id="coins">0</span></div>
 
 <!-- ЭКРАНЫ -->
-
 <div id="screen-main"></div>
 
 <div id="screen-gacha" class="hidden">
-  <button onclick="rollGacha()">🎰 Крутить гачу (50💰)</button>
+  <div class="card">
+    <button onclick="rollGacha()">🎰 Крутить гачу (50💰)</button>
+  </div>
 </div>
 
 <div id="screen-shop" class="hidden">
@@ -68,33 +120,45 @@ button{
   <div id="inventory"></div>
 </div>
 
+<div id="screen-leaderboard" class="hidden">
+  <h2>🏆 Лидерборд</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Игрок</th>
+          <th>💰</th>
+        </tr>
+      </thead>
+      <tbody id="leaders"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- МЕНЮ -->
 <div class="menu">
-  <button onclick="show('main')">🏠 Главная</button>
-  <button onclick="show('gacha')">🎰 Гача</button>
-  <button onclick="show('shop')">🛒 Магазин</button>
-  <button onclick="show('inventory')">🎒 Инвентарь</button>
+  <button onclick="show('main')">🏠</button>
+  <button onclick="show('gacha')">🎰</button>
+  <button onclick="show('shop')">🛒</button>
+  <button onclick="show('inventory')">🎒</button>
+  <button onclick="show('leaderboard')">🏆</button>
 </div>
 
 <script>
 const tg=window.Telegram.WebApp;
 tg.expand();
 
-/* === КОТЫ === */
 const cats=[
  {name:"Обычный кот",income:1,rarity:"Common"},
  {name:"Полосатый кот",income:2,rarity:"Common"},
  {name:"Чёрный кот",income:3,rarity:"Uncommon"},
- {name:"Белый кот",income:4,rarity:"Uncommon"},
  {name:"Самурай кот",income:6,rarity:"Rare"},
- {name:"Пират кот",income:7,rarity:"Rare"},
- {name:"Кибер кот",income:9,rarity:"Epic"},
- {name:"Маг кот",income:12,rarity:"Epic"},
+ {name:"Кибер кот",income:10,rarity:"Epic"},
  {name:"Дракон кот",income:18,rarity:"Legendary"},
  {name:"Божий кот",income:30,rarity:"Mythic"},
 ];
 
-/* === КЛЕТКИ === */
 const cageTypes=[
  {emoji:"🪵",name:"Деревянная",slots:2,price:100,allowed:["Common"]},
  {emoji:"🔩",name:"Железная",slots:3,price:300,allowed:["Common","Uncommon"]},
@@ -103,16 +167,17 @@ const cageTypes=[
  {emoji:"🌌",name:"Божественная",slots:1,price:3000,allowed:["Mythic"]},
 ];
 
-/* === СОХРАНЕНИЕ === */
 let data=JSON.parse(localStorage.getItem("gacha"))||{
  coins:300,
  inventory:[],
  cages:[],
+ leaderboard:[],
  last:Date.now()
 };
+
 function save(){localStorage.setItem("gacha",JSON.stringify(data));}
 
-/* === ПАССИВ === */
+/* Пассив */
 function passive(){
  const now=Date.now();
  const sec=Math.floor((now-data.last)/1000);
@@ -123,66 +188,72 @@ function passive(){
  save();
 }
 
-/* === НАВИГАЦИЯ === */
+/* Навигация */
 function show(s){
- ["main","gacha","shop","inventory"].forEach(x=>{
+ ["main","gacha","shop","inventory","leaderboard"].forEach(x=>{
   document.getElementById("screen-"+x).classList.add("hidden");
  });
  document.getElementById("screen-"+s).classList.remove("hidden");
  render();
 }
 
-/* === ГАЧА === */
+/* Гача */
 function rollGacha(){
- if(data.coins<50) return alert("Нет монет");
+ if(data.coins<50) return;
  data.coins-=50;
- let r=Math.random(),pool=cats;
- if(r>0.97) pool=cats.filter(c=>c.rarity=="Mythic");
- else if(r>0.93) pool=cats.filter(c=>c.rarity=="Legendary");
- else if(r>0.85) pool=cats.filter(c=>["Epic","Rare"].includes(c.rarity));
- const cat=pool[Math.floor(Math.random()*pool.length)];
+ const cat=cats[Math.floor(Math.random()*cats.length)];
  data.inventory.push(cat);
  save();render();
- alert("Выпал: "+cat.name);
 }
 
-/* === КУПИТЬ КЛЕТКУ === */
+/* Клетки */
 function buyCage(i){
  const c=cageTypes[i];
- if(data.coins<c.price) return alert("Не хватает монет");
+ if(data.coins<c.price) return;
  data.coins-=c.price;
  data.cages.push({...c,cats:[]});
  save();render();
 }
 
-/* === ПОСАДИТЬ КОТА === */
 function placeCat(ci,ii){
- const cage=data.cages[ci],cat=data.inventory[ii];
- if(!cage.allowed.includes(cat.rarity)) return alert("Редкость не подходит");
- if(cage.cats.length>=cage.slots) return alert("Клетка заполнена");
+ const cage=data.cages[ci];
+ const cat=data.inventory[ii];
+ if(!cage.allowed.includes(cat.rarity)) return;
+ if(cage.cats.length>=cage.slots) return;
  cage.cats.push(cat);
  data.inventory.splice(ii,1);
  save();render();
 }
 
-/* === РЕНДЕР === */
+/* Лидерборд (локальный) */
+function updateLeaderboard(){
+ const name=tg.initDataUnsafe.user?.first_name||"Player";
+ let entry=data.leaderboard.find(e=>e.name===name);
+ if(!entry){
+  data.leaderboard.push({name,coins:Math.floor(data.coins)});
+ }else{
+  entry.coins=Math.max(entry.coins,Math.floor(data.coins));
+ }
+ data.leaderboard.sort((a,b)=>b.coins-a.coins);
+ data.leaderboard=data.leaderboard.slice(0,10);
+ save();
+}
+
+/* Рендер */
 function render(){
  document.getElementById("coins").innerText=Math.floor(data.coins);
 
  /* Главная */
  const main=document.getElementById("screen-main");
  main.innerHTML="<h2>🏠 Клетки</h2>";
- if(!data.cages.length) main.innerHTML+="<p class='small'>Клеток нет</p>";
  data.cages.forEach(c=>{
-   let income=c.cats.reduce((s,x)=>s+x.income,0);
-   main.innerHTML+=`
-   <div class="card">
-   ${c.emoji} ${c.name} клетка<br>
-   <span class="small">Доход: ${income}/сек</span>
-   ${c.cats.length?c.cats.map(cat=>`
-     <div class="cat">🐱 ${cat.name} (+${cat.income})</div>
-   `).join(""):"<div class='small'>Пусто</div>"}
-   </div>`;
+  main.innerHTML+=`
+  <div class="card">
+   ${c.emoji} ${c.name}<br>
+   <span class="small">
+   ${c.cats.map(x=>"🐱 "+x.name).join("<br>")||"Пусто"}
+   </span>
+  </div>`;
  });
 
  /* Магазин */
@@ -191,11 +262,9 @@ function render(){
  cageTypes.forEach((c,i)=>{
   shop.innerHTML+=`
   <div class="card">
-  ${c.emoji} ${c.name}<br>
-  Слоты: ${c.slots}<br>
-  Редкости: ${c.allowed.join(", ")}<br>
-  Цена: ${c.price}💰
-  <button onclick="buyCage(${i})">Купить</button>
+   ${c.emoji} ${c.name}<br>
+   Цена: ${c.price}💰
+   <button onclick="buyCage(${i})">Купить</button>
   </div>`;
  });
 
@@ -205,12 +274,26 @@ function render(){
  data.inventory.forEach((c,i)=>{
   inv.innerHTML+=`
   <div class="card">
-  🐱 ${c.name}<br>
-  ⭐ ${c.rarity} | 💰 +${c.income}/сек
-  ${data.cages.map((_,ci)=>`
-   <button onclick="placeCat(${ci},${i})">В клетку #${ci+1}</button>
-  `).join("")}
+   🐱 ${c.name}<br>
+   +${c.income}/сек
+   ${data.cages.map((_,ci)=>`
+    <button class="secondary" onclick="placeCat(${ci},${i})">
+    В клетку #${ci+1}
+    </button>`).join("")}
   </div>`;
+ });
+
+ /* Лидерборд */
+ updateLeaderboard();
+ const l=document.getElementById("leaders");
+ l.innerHTML="";
+ data.leaderboard.forEach((e,i)=>{
+  l.innerHTML+=`
+   <tr>
+    <td>${i+1}</td>
+    <td>${e.name}</td>
+    <td>${e.coins}</td>
+   </tr>`;
  });
 }
 
