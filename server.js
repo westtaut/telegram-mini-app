@@ -13,12 +13,25 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
+
+// CORS — разрешаем все источники (GitHub Pages, Telegram WebApp)
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    credentials: false,
+  },
+  // Важно для Railway: разрешаем polling как fallback
+  transports: ['polling', 'websocket'],
+  allowEIO3: true, // совместимость со старыми клиентами
 });
 
 const PORT = process.env.PORT || 3000;
@@ -90,6 +103,18 @@ function simulateBattle(fighter1, fighter2) {
     rounds: round,
   };
 }
+
+/* ══════════════════════════════════════
+   HEALTH CHECK — Railway проверяет этот URL
+   Также не даёт серверу "засыпать"
+══════════════════════════════════════ */
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', game: 'Gacha Cats', players: players.size, uptime: Math.floor(process.uptime()) });
+});
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: Date.now() });
+});
 
 /* ══════════════════════════════════════
    REST API
