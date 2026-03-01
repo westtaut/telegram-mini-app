@@ -240,62 +240,94 @@ function updateLeaderboard(){
 }
 
 /* Рендер */
+<script>
 function render(){
- document.getElementById("coins").innerText=Math.floor(data.coins);
+  document.getElementById("coins").innerText=Math.floor(data.coins);
 
- /* Главная */
- const main=document.getElementById("screen-main");
- main.innerHTML="<h2>🏠 Клетки</h2>";
- data.cages.forEach(c=>{
-  main.innerHTML+=`
-  <div class="card">
-   ${c.emoji} ${c.name}<br>
-   <span class="small">
-   ${c.cats.map(x=>"🐱 "+x.name).join("<br>")||"Пусто"}
-   </span>
-  </div>`;
- });
+  /* ===== ГЛАВНАЯ ===== */
+  const main=document.getElementById("screen-main");
+  main.innerHTML="<h2>🏠 Клетки</h2>";
+  if(!data.cages.length){
+    main.innerHTML+="<p class='small'>Клеток пока нет</p>";
+  }
+  data.cages.forEach(c=>{
+    let income=c.cats.reduce((s,x)=>s+x.income,0);
+    main.innerHTML+=`
+    <div class="card">
+      ${c.emoji} ${c.name}<br>
+      <span class="small">Доход: ${income}/сек</span><br>
+      ${c.cats.length
+        ? c.cats.map(cat=>`🐱 ${cat.name} (+${cat.income})`).join("<br>")
+        : "<span class='small'>Пусто</span>"
+      }
+    </div>`;
+  });
 
- /* Магазин */
- const shop=document.getElementById("shop");
- shop.innerHTML="";
- cageTypes.forEach((c,i)=>{
-  shop.innerHTML+=`
-  <div class="card">
-   ${c.emoji} ${c.name}<br>
-   Цена: ${c.price}💰
-   <button onclick="buyCage(${i})">Купить</button>
-  </div>`;
- });
+  /* ===== МАГАЗИН ===== */
+  const shop=document.getElementById("shop");
+  shop.innerHTML="";
+  cageTypes.forEach((c,i)=>{
+    shop.innerHTML+=`
+    <div class="card">
+      ${c.emoji} ${c.name}<br>
+      Слоты: ${c.slots}<br>
+      Редкости: ${c.allowed.join(", ")}<br>
+      Цена: ${c.price}💰
+      <button onclick="buyCage(${i})">Купить</button>
+    </div>`;
+  });
 
- /* Инвентарь */
- const inv=document.getElementById("inventory");
- inv.innerHTML="";
- data.inventory.forEach((c,i)=>{
-  inv.innerHTML+=`
-  <div class="card">
-   🐱 ${c.name}<br>
-   +${c.income}/сек
-   ${data.cages.map((_,ci)=>`
-    <button class="secondary" onclick="placeCat(${ci},${i})">
-    В клетку #${ci+1}
-    </button>`).join("")}
-  </div>`;
- });
+  /* ===== ИНВЕНТАРЬ (НОВАЯ ЛОГИКА) ===== */
+  const inv=document.getElementById("inventory");
+  inv.innerHTML="";
 
- /* Лидерборд */
- updateLeaderboard();
- const l=document.getElementById("leaders");
- l.innerHTML="";
- data.leaderboard.forEach((e,i)=>{
-  l.innerHTML+=`
-   <tr>
-    <td>${i+1}</td>
-    <td>${e.name}</td>
-    <td>${e.coins}</td>
-   </tr>`;
- });
+  data.inventory.forEach((cat,i)=>{
+    // ищем подходящие клетки
+    const validCages = data.cages
+      .map((c,ci)=>({c,ci}))
+      .filter(x =>
+        x.c.allowed.includes(cat.rarity) &&
+        x.c.cats.length < x.c.slots
+      );
+
+    let buttons = "";
+    if(validCages.length){
+      buttons = validCages.map(x=>`
+        <button class="secondary"
+          onclick="placeCat(${x.ci},${i})">
+          ➕ В ${x.c.emoji} ${x.c.name}
+        </button>
+      `).join("");
+    }else{
+      buttons = `
+        <div class="small danger">
+          ❌ Подходящая клетка отсутствует
+        </div>`;
+    }
+
+    inv.innerHTML+=`
+    <div class="card">
+      🐱 ${cat.name}<br>
+      ⭐ ${cat.rarity}<br>
+      💰 +${cat.income}/сек
+      ${buttons}
+    </div>`;
+  });
+
+  /* ===== ЛИДЕРБОРД ===== */
+  updateLeaderboard();
+  const l=document.getElementById("leaders");
+  l.innerHTML="";
+  data.leaderboard.forEach((e,i)=>{
+    l.innerHTML+=`
+    <tr>
+      <td>${i+1}</td>
+      <td>${e.name}</td>
+      <td>${e.coins}</td>
+    </tr>`;
+  });
 }
+</script>
 
 passive();
 render();
