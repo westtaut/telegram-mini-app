@@ -715,7 +715,7 @@ body{font-family:var(--font);color:var(--txt);font-size:15px;line-height:1.4;-we
 
 <script>
 /* ══ CONFIG ══ */
-const SERVER_URL = 'https://enthusiastic-nurturing-production-5690.up.railway.app';
+const SERVER_URL = 'https://YOUR-SERVER.up.railway.app';
 
 /* ══ TELEGRAM ══ */
 const tg = (typeof Telegram !== 'undefined') ? Telegram.WebApp : null;
@@ -803,12 +803,12 @@ const RAIDS=[
 
 /* ══ DATA: SKILLS ══ */
 const SKILLS=[
-  {id:"s_income",emoji:"💰",name:"Жадность",  sc:"#FFD60A",maxLv:10,desc:"↑ доход монет",   effFn:lv=>`+${lv*5}% монет`,  applyKey:"incomeBonus",costFish:3,costStar:0},
-  {id:"s_fish",  emoji:"🐟",name:"Рыбак",     sc:"#32D2F3",maxLv:10,desc:"↑ сбор рыбы",    effFn:lv=>`+${lv*5}% рыбы`,   applyKey:"fishBonus",  costFish:3,costStar:0},
-  {id:"s_power", emoji:"⚔️",name:"Боевой дух",sc:"#FF453A",maxLv:10,desc:"↑ боевая сила",  effFn:lv=>`+${lv*8}% силы`,   applyKey:"powerBonus", costFish:0,costStar:1},
-  {id:"s_armor", emoji:"🛡️",name:"Закалка",   sc:"#0A84FF",maxLv:10,desc:"↓ урон в PvP",   effFn:lv=>`-${lv*3}% урона`,  applyKey:"armorBonus", costFish:0,costStar:1},
-  {id:"s_luck",  emoji:"🍀",name:"Удача",      sc:"#30D158",maxLv:5, desc:"Шанс x2 награды",effFn:lv=>`${lv*4}% шанс x2`, applyKey:"luckBonus",  costFish:2,costStar:1},
-  {id:"s_xp",    emoji:"📚",name:"Обучение",   sc:"#BF5AF2",maxLv:5, desc:"↑ получение XP", effFn:lv=>`+${lv*10}% XP`,    applyKey:"xpBonus",    costFish:1,costStar:2},
+  {id:"s_income",emoji:"💰",name:"Жадность",  sc:"#FFD60A",maxLv:10,desc:"↑ доход монет",   effFn:lv=>`+${lv*5}% монет`,  applyKey:"incomeBonus",costFish:20, costStar:0},
+  {id:"s_fish",  emoji:"🐟",name:"Рыбак",     sc:"#32D2F3",maxLv:10,desc:"↑ сбор рыбы",    effFn:lv=>`+${lv*5}% рыбы`,   applyKey:"fishBonus",  costFish:20, costStar:0},
+  {id:"s_power", emoji:"⚔️",name:"Боевой дух",sc:"#FF453A",maxLv:10,desc:"↑ боевая сила",  effFn:lv=>`+${lv*8}% силы`,   applyKey:"powerBonus", costFish:0,  costStar:5},
+  {id:"s_armor", emoji:"🛡️",name:"Закалка",   sc:"#0A84FF",maxLv:10,desc:"↓ урон в PvP",   effFn:lv=>`-${lv*3}% урона`,  applyKey:"armorBonus", costFish:0,  costStar:5},
+  {id:"s_luck",  emoji:"🍀",name:"Удача",      sc:"#30D158",maxLv:5, desc:"Шанс x2 награды",effFn:lv=>`${lv*4}% шанс x2`, applyKey:"luckBonus",  costFish:30, costStar:8},
+  {id:"s_xp",    emoji:"📚",name:"Обучение",   sc:"#BF5AF2",maxLv:5, desc:"↑ получение XP", effFn:lv=>`+${lv*10}% XP`,    applyKey:"xpBonus",    costFish:15, costStar:12},
 ];
 
 const CAT_WGT  = {Common:65,Rare:24,Epic:8,Legendary:2.5,Mythic:0.5};
@@ -821,7 +821,7 @@ const LV_STAR={Common:0,Rare:1,Epic:3,Legendary:7,Mythic:18};
 const MAX_LEVEL=30;
 
 function lvCost(p){const lv=p.level||1;return{fish:Math.floor((LV_FISH[p.rarity]||6)*Math.pow(1.5,lv-1)),stars:Math.floor((LV_STAR[p.rarity]||0)*Math.pow(1.3,lv-1))};}
-function skillCost(sk,lv){return{fish:Math.floor(sk.costFish*Math.pow(1.6,lv)),stars:Math.floor(sk.costStar*Math.pow(1.4,lv))};}
+function skillCost(sk,lv){return{fish:Math.floor(sk.costFish*Math.pow(1.85,lv)),stars:Math.floor(sk.costStar*Math.pow(1.65,lv))};}
 
 /* ══ STATE ══ */
 let S=null;
@@ -970,15 +970,29 @@ let tT;function toast(m){const el=document.getElementById("toast");el.textConten
 let gachaMode="cat";
 function setGachaMode(m){
   gachaMode=m;
+  H('soft');
   document.querySelectorAll(".gacha-tab").forEach(t=>t.classList.toggle("on",t.dataset.m===m));
-  // Rebuild rates inline
+  // Orb instant swap
+  const orb=document.getElementById("gacha-orb-el");
+  if(orb)orb.textContent=m==="cat"?"🎰":"⚙️";
+  // Rates instant swap
   const ratesEl=document.getElementById("gacha-rates-inner");
-  if(!ratesEl)return;
-  if(m==="cat"){
-    ratesEl.innerHTML=`<div class="gacha-rates-row"><span class="rate-chip" style="color:var(--rc)">Common 65%</span><span class="rate-chip" style="color:var(--rr)">Rare 24%</span><span class="rate-chip" style="color:var(--re)">Epic 8%</span><span class="rate-chip" style="color:var(--rl)">Legendary 2.5%</span><span class="rate-chip" style="color:var(--rm)">Mythic 0.5%</span></div><div class="gacha-note">Цена: 50💰 · Mythic дает +5⭐</div>`;
-  }else{
-    ratesEl.innerHTML=`<div class="gacha-rates-row"><span class="rate-chip" style="color:var(--rc)">Common 60%</span><span class="rate-chip" style="color:var(--rr)">Rare 30%</span><span class="rate-chip" style="color:var(--re)">Epic 8%</span><span class="rate-chip" style="color:var(--rl)">Legendary 1.8%</span><span class="rate-chip" style="color:var(--rm)">Mythic 0.2%</span></div><div class="gacha-note">Только снаряжение · Цена: 25🐟</div>`;
+  if(ratesEl){
+    ratesEl.innerHTML=m==="cat"
+      ?`<div class="gacha-rates-row"><span class="rate-chip" style="color:var(--rc)">Common 65%</span><span class="rate-chip" style="color:var(--rr)">Rare 24%</span><span class="rate-chip" style="color:var(--re)">Epic 8%</span><span class="rate-chip" style="color:var(--rl)">Legendary 2.5%</span><span class="rate-chip" style="color:var(--rm)">Mythic 0.5%</span></div><div class="gacha-note">Цена: 50💰 · Mythic даёт +5⭐</div>`
+      :`<div class="gacha-rates-row"><span class="rate-chip" style="color:var(--rc)">Common 60%</span><span class="rate-chip" style="color:var(--rr)">Rare 30%</span><span class="rate-chip" style="color:var(--re)">Epic 8%</span><span class="rate-chip" style="color:var(--rl)">Legendary 1.8%</span><span class="rate-chip" style="color:var(--rm)">Mythic 0.2%</span></div><div class="gacha-note">Только снаряжение · Цена: 25🐟</div>`;
   }
+  // Buttons instant swap
+  const b1=document.getElementById("gacha-btn1"),b2=document.getElementById("gacha-btn2");
+  if(b1){b1.className=`ios-btn ${m==="gear"?"purple":""}`;b1.style.cssText="font-size:16px;padding:16px";b1.textContent=m==="cat"?"🎰 Крутить ×1 — 50💰":"⚙️ Крутить ×1 — 25🐟";}
+  if(b2){b2.className=`ios-btn ${m==="gear"?"purple":""}`;b2.style.opacity=".85";b2.style.fontSize="15px";b2.textContent=m==="cat"?"🎰 ×10 — 500💰 (экономия!)":"⚙️ ×10 — 250🐟";}
+  // Collection panels instant swap
+  const cc=document.getElementById("coll-cats"),cg=document.getElementById("coll-gear");
+  const ct=document.getElementById("coll-title-cats"),gt=document.getElementById("coll-title-gear");
+  if(cc)cc.style.display=m==="cat"?"grid":"none";
+  if(cg)cg.style.display=m==="gear"?"grid":"none";
+  if(ct)ct.style.display=m==="cat"?"block":"none";
+  if(gt)gt.style.display=m==="gear"?"block":"none";
 }
 function weightedRoll(wgt){const total=Object.values(wgt).reduce((a,b)=>a+b,0);let r=Math.random()*total,cum=0;for(const[k,w]of Object.entries(wgt)){cum+=w;if(r<cum)return k;}return Object.keys(wgt)[0];}
 function roll(){if(gachaMode==="gear"){rollGear();return;}if(S.coins<50){toast("Нужно 50💰");HN('error');return;}S.coins-=50;H('medium');const rar=weightedRoll(CAT_WGT);const pool=CATS.filter(c=>c.rarity===rar);const pet=makePet(pool[Math.floor(Math.random()*pool.length)]);if(rar==="Mythic"){S.stars+=5;}else if(rar==="Legendary"){S.stars+=3;}else if(rar==="Epic"&&Math.random()<.4){S.stars+=1;}S.inventory.push(pet);save();showGov(pet);}
@@ -1125,9 +1139,21 @@ function renderHome(){
 
 function renderGacha(){
   const catRatesHtml=`<div class="gacha-rates-row"><span class="rate-chip" style="color:var(--rc)">Common 65%</span><span class="rate-chip" style="color:var(--rr)">Rare 24%</span><span class="rate-chip" style="color:var(--re)">Epic 8%</span><span class="rate-chip" style="color:var(--rl)">Legendary 2.5%</span><span class="rate-chip" style="color:var(--rm)">Mythic 0.5%</span></div><div class="gacha-note">Цена: 50💰 · Mythic даёт +5⭐</div>`;
+  const SLOT_LABELS={collar:"📿 Ошейник",hat:"🎩 Шапка",toy:"🎮 Игрушка",armor:"🛡️ Броня",wing:"🪶 Крылья",amulet:"✨ Амулет"};
+  const gearGridHtml=Object.keys(SLOT_LABELS).map(slot=>{
+    const items=GEAR.filter(g=>g.slot===slot);
+    return `<div class="section-title" style="margin-top:12px">${SLOT_LABELS[slot]}</div>
+    <div class="coll-grid">
+      ${items.map(g=>`<div class="coll-item ${g.rarity}">
+        <span class="coll-em">${g.emoji}</span>
+        <div class="coll-name">${g.name}</div>
+        <div class="coll-rate">+${Math.round(g.bonus*100)}% · ⚔️${g.power}</div>
+      </div>`).join("")}
+    </div>`;
+  }).join("");
   const h=`
     <div class="gacha-hero">
-      <span class="gacha-orb">${gachaMode==="cat"?"🎰":"⚙️"}</span>
+      <span class="gacha-orb" id="gacha-orb-el">${gachaMode==="cat"?"🎰":"⚙️"}</span>
       <div class="gacha-tabs">
         <button class="gacha-tab ${gachaMode==="cat"?"on":""}" data-m="cat" onclick="setGachaMode('cat')">🐱 Коты</button>
         <button class="gacha-tab ${gachaMode==="gear"?"on":""}" data-m="gear" onclick="setGachaMode('gear')">⚙️ Снаряжение</button>
@@ -1137,25 +1163,21 @@ function renderGacha(){
       ${catRatesHtml}
     </div>
     <div class="gacha-btns">
-      <button class="ios-btn ${gachaMode==="gear"?"purple":""}" onclick="roll()" style="font-size:16px;padding:16px">${gachaMode==="cat"?"🎰 Крутить ×1 — 50💰":"⚙️ Крутить ×1 — 25🐟"}</button>
-      <button class="ios-btn ${gachaMode==="gear"?"purple":""}" style="opacity:.85;font-size:15px" onclick="roll10()">${gachaMode==="cat"?"🎰 ×10 — 500💰 (экономия!)":"⚙️ ×10 — 250🐟"}</button>
+      <button id="gacha-btn1" class="ios-btn ${gachaMode==="gear"?"purple":""}" onclick="roll()" style="font-size:16px;padding:16px">${gachaMode==="cat"?"🎰 Крутить ×1 — 50💰":"⚙️ Крутить ×1 — 25🐟"}</button>
+      <button id="gacha-btn2" class="ios-btn ${gachaMode==="gear"?"purple":""}" style="opacity:.85;font-size:15px" onclick="roll10()">${gachaMode==="cat"?"🎰 ×10 — 500💰 (экономия!)":"⚙️ ×10 — 250🐟"}</button>
     </div>
     <div class="gacha-x10" id="x10-grid" style="display:none;margin-top:12px"></div>
-    <div class="section-title" style="margin-top:16px">Все коты (${CATS.length})</div>
-    <div class="coll-grid">
+    <div id="coll-title-cats" class="section-title" style="margin-top:16px;display:${gachaMode==="cat"?"block":"none"}">Все коты (${CATS.length})</div>
+    <div id="coll-cats" class="coll-grid" style="display:${gachaMode==="cat"?"grid":"none"}">
       ${CATS.map(c=>`<div class="coll-item ${c.rarity}">
         <span class="coll-em">${c.emoji}</span>
         <div class="coll-name">${c.name}</div>
         <div class="coll-rate">${{Common:"65%",Rare:"24%",Epic:"8%",Legendary:"2.5%",Mythic:"0.5%"}[c.rarity]}</div>
       </div>`).join("")}
     </div>
-    <div class="section-title">Снаряжение (${GEAR.length})</div>
-    <div class="grp">
-      ${GEAR.map(g=>`<div class="grp-row">
-        <div class="grp-ico" style="background:rgba(${g.rarity==='Common'?'142,142,147':g.rarity==='Rare'?'50,210,243':g.rarity==='Epic'?'191,90,242':g.rarity==='Legendary'?'255,159,10':'255,69,58'},.12)">${g.emoji}</div>
-        <div class="grp-body"><div class="grp-name">${g.name}</div><div class="grp-sub">+${Math.round(g.bonus*100)}% доход · ⚔️+${g.power} · ${{collar:"ошейник",hat:"шапка",toy:"игрушка",armor:"броня",wing:"крылья",amulet:"амулет"}[g.slot]||g.slot}</div></div>
-        <span class="pill ${g.rarity}">${g.rarity}</span>
-      </div>`).join("")}
+    <div id="coll-title-gear" class="section-title" style="margin-top:16px;display:${gachaMode==="gear"?"block":"none"}">Снаряжение (${GEAR.length})</div>
+    <div id="coll-gear" style="display:${gachaMode==="gear"?"grid":"none"}">
+      ${gearGridHtml}
     </div>
   `;
   document.getElementById("s1").innerHTML=h;
