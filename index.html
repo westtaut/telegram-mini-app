@@ -9,37 +9,74 @@ body {
   background: var(--tg-theme-bg-color);
   color: var(--tg-theme-text-color);
   font-family: Arial, sans-serif;
-  padding: 16px;
+  margin:0;
+  padding:10px;
 }
-h1,h2 { text-align:center; }
-button { width:100%; padding:10px; margin-top:6px; }
+h1,h2{text-align:center;}
+button {
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  font-size:16px;
+}
 .card {
   border:1px solid #555;
   border-radius:8px;
   padding:10px;
   margin:8px 0;
 }
+.menu {
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:var(--tg-theme-bg-color);
+  border-top:1px solid #555;
+  display:flex;
+}
+.menu button {
+  flex:1;
+  margin:0;
+  border-radius:0;
+}
+.hidden { display:none; }
 .small { opacity:.7; font-size:14px; }
 </style>
 </head>
+
 <body>
 
 <h1>🐱 Gacha Cats</h1>
-<h2>💰 Монеты: <span id="coins">0</span></h2>
+<h2>💰 <span id="coins">0</span></h2>
 
-<button onclick="rollGacha()">🎰 Гача (50💰)</button>
+<!-- ЭКРАНЫ -->
 
-<h2>🏠 Клетки</h2>
-<div id="cages"></div>
+<div id="screen-gacha">
+  <button onclick="rollGacha()">🎰 Крутить гачу (50💰)</button>
+</div>
 
-<h2>🎒 Инвентарь</h2>
-<div id="inventory"></div>
+<div id="screen-shop" class="hidden">
+  <h2>🏠 Магазин клеток</h2>
+  <div id="shop"></div>
+</div>
+
+<div id="screen-inventory" class="hidden">
+  <h2>🎒 Инвентарь</h2>
+  <div id="inventory"></div>
+</div>
+
+<!-- МЕНЮ -->
+<div class="menu">
+  <button onclick="show('gacha')">🎰 Гача</button>
+  <button onclick="show('shop')">🏠 Магазин</button>
+  <button onclick="show('inventory')">🎒 Инвентарь</button>
+</div>
 
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-/* === КОТЫ === */
+/* === ДАННЫЕ === */
 const cats = [
  {name:"Обычный кот",income:1,rarity:"Common"},
  {name:"Полосатый кот",income:2,rarity:"Common"},
@@ -53,7 +90,6 @@ const cats = [
  {name:"Божий кот",income:30,rarity:"Mythic"},
 ];
 
-/* === КЛЕТКИ === */
 const cageTypes = [
  {name:"🪵 Деревянная",slots:2,price:100,allowed:["Common"]},
  {name:"🔩 Железная",slots:3,price:300,allowed:["Common","Uncommon"]},
@@ -72,7 +108,7 @@ let data = JSON.parse(localStorage.getItem("gacha")) || {
 
 function save(){localStorage.setItem("gacha",JSON.stringify(data));}
 
-/* === ПАССИВНЫЙ ДОХОД === */
+/* === ПАССИВ === */
 function passive(){
  const now=Date.now();
  const sec=Math.floor((now-data.last)/1000);
@@ -81,6 +117,15 @@ function passive(){
  data.coins+=inc*sec;
  data.last=now;
  save();
+}
+
+/* === НАВИГАЦИЯ === */
+function show(screen){
+ ["gacha","shop","inventory"].forEach(s=>{
+   document.getElementById("screen-"+s).classList.add("hidden");
+ });
+ document.getElementById("screen-"+screen).classList.remove("hidden");
+ render();
 }
 
 /* === ГАЧА === */
@@ -95,15 +140,15 @@ function rollGacha(){
  const cat=pool[Math.floor(Math.random()*pool.length)];
  data.inventory.push(cat);
  save(); render();
- alert("Выпал: "+cat.name+" 🐱");
+ alert("Выпал: "+cat.name);
 }
 
-/* === КУПИТЬ КЛЕТКУ === */
+/* === МАГАЗИН КЛЕТОК === */
 function buyCage(i){
- const t=cageTypes[i];
- if(data.coins<t.price) return alert("Не хватает монет");
- data.coins-=t.price;
- data.cages.push({...t,cats:[]});
+ const c=cageTypes[i];
+ if(data.coins<c.price) return alert("Не хватает монет");
+ data.coins-=c.price;
+ data.cages.push({...c,cats:[]});
  save(); render();
 }
 
@@ -112,7 +157,7 @@ function placeCat(ci,ii){
  const cage=data.cages[ci];
  const cat=data.inventory[ii];
  if(!cage.allowed.includes(cat.rarity))
-   return alert("Эта клетка не подходит для редкости!");
+   return alert("Эта клетка не подходит");
  if(cage.cats.length>=cage.slots)
    return alert("Клетка заполнена");
  cage.cats.push(cat);
@@ -124,6 +169,21 @@ function placeCat(ci,ii){
 function render(){
  document.getElementById("coins").innerText=Math.floor(data.coins);
 
+ // Магазин
+ const shop=document.getElementById("shop");
+ shop.innerHTML="";
+ cageTypes.forEach((c,i)=>{
+   shop.innerHTML+=`
+   <div class="card">
+   ${c.name}<br>
+   Слоты: ${c.slots}<br>
+   Допустимо: ${c.allowed.join(", ")}<br>
+   Цена: ${c.price}💰
+   <button onclick="buyCage(${i})">Купить</button>
+   </div>`;
+ });
+
+ // Инвентарь
  const inv=document.getElementById("inventory");
  inv.innerHTML="";
  data.inventory.forEach((c,i)=>{
@@ -135,24 +195,6 @@ function render(){
      <button onclick="placeCat(${ci},${i})">В клетку #${ci+1}</button>
    `).join("")}
    </div>`;
- });
-
- const cages=document.getElementById("cages");
- cages.innerHTML="";
- data.cages.forEach((c,i)=>{
-   cages.innerHTML+=`
-   <div class="card">
-   ${c.name}<br>
-   Коты: ${c.cats.length}/${c.slots}<br>
-   <span class="small">Допустимо: ${c.allowed.join(", ")}</span>
-   </div>`;
- });
-
- cageTypes.forEach((c,i)=>{
-   cages.innerHTML+=`
-   <button onclick="buyCage(${i})">
-   Купить ${c.name} (${c.price}💰)
-   </button>`;
  });
 }
 
