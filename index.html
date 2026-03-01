@@ -5,1094 +5,850 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Gacha Cats</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <style>
+/* ─── RESET & BASE ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --accent:#5b8cff;
-  --accent2:#7cf5c8;
+  --bg:       var(--tg-theme-bg-color,       #13131a);
+  --bg2:      var(--tg-theme-secondary-bg-color, #1e1e2a);
+  --txt:      var(--tg-theme-text-color,      #f0f0f0);
+  --accent:   #5b8cff;
+  --accent2:  #7cf5c8;
+  --r-common: #9e9e9e;
+  --r-rare:   #4fc3f7;
+  --r-epic:   #ce93d8;
+  --r-legend: #ffd54f;
+  --radius:   18px;
 }
+html,body{height:100%;overflow:hidden}
 body{
-  margin:0;
-  font-family:Inter,Arial,sans-serif;
-  background:var(--tg-theme-bg-color,#1a1a2e);
-  color:var(--tg-theme-text-color,#fff);
-  overflow:hidden;
+  font-family:-apple-system,'SF Pro Text','Segoe UI',Arial,sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+  font-size:15px;
+  line-height:1.4;
 }
 
-/* ===== HEADER ===== */
+/* ─── HEADER ───────────────────────────────────────────────── */
 .header{
-  padding:14px;
-  text-align:center;
+  display:flex;align-items:center;justify-content:center;
+  padding:12px 16px 0;gap:8px;
+  position:relative;height:56px;
 }
-.balance{
-  font-size:20px;
-  font-weight:600;
-}
-
-/* ===== SHOP BUTTON ===== */
-#shop-btn{
-  position:fixed;
-  top:14px;
-  left:14px;
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  border:none;
-  font-size:22px;
-  background:linear-gradient(135deg,var(--accent2),var(--accent));
-  color:#fff;
-  z-index:10;
-  cursor:pointer;
+.header h1{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.balance-pill{
+  position:absolute;right:14px;
+  background:var(--bg2);border-radius:50px;
+  padding:6px 14px;font-size:15px;font-weight:700;
+  display:flex;align-items:center;gap:4px;
 }
 
-/* ===== CAROUSEL ===== */
+/* ─── BOTTOM NAV ───────────────────────────────────────────── */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:68px;background:var(--bg2);
+  border-top:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:stretch;
+  padding:0 8px;padding-bottom:env(safe-area-inset-bottom,0px);
+  z-index:50;
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;
+  background:none;border:none;
+  color:rgba(255,255,255,.38);
+  font-size:10px;font-weight:600;
+  cursor:pointer;border-radius:12px;
+  transition:color .18s;width:auto;margin:0;padding:6px 0;
+}
+.nav-btn .icon{font-size:22px;line-height:1;transition:transform .2s}
+.nav-btn.active{color:var(--accent)}
+.nav-btn.active .icon{transform:scale(1.18)}
+
+/* ─── CAROUSEL ─────────────────────────────────────────────── */
 .carousel{
-  display:flex;
-  width:400%;
-  height:calc(100vh - 170px);
-  transition:transform .35s cubic-bezier(.25,.8,.25,1);
+  display:flex;width:400%;
+  height:calc(100vh - 56px - 68px);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
 }
 .screen{
-  width:25%; /* FIX: было 100vw, но внутри flex-контейнера шириной 400% нужно 25% */
-  padding:12px;
-  box-sizing:border-box;
-  overflow-y:auto;
-  overflow-x:hidden;
+  width:25%;overflow-y:auto;overflow-x:hidden;
+  padding:10px 14px 16px;
+  -webkit-overflow-scrolling:touch;
 }
 
-/* ===== CARDS ===== */
+/* ─── SECTION TITLE ────────────────────────────────────────── */
+.section-title{
+  font-size:11px;font-weight:800;
+  letter-spacing:.8px;text-transform:uppercase;
+  opacity:.35;margin:16px 0 8px;
+}
+.section-title:first-child{margin-top:4px}
+
+/* ─── CARD ─────────────────────────────────────────────────── */
 .card{
-  background:var(--tg-theme-secondary-bg-color,#1f1f1f);
-  border-radius:20px;
-  padding:16px;
-  margin-bottom:12px;
-  box-shadow:0 10px 25px rgba(0,0,0,.18);
+  background:var(--bg2);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:10px;
 }
 
-/* ===== BUTTONS ===== */
-button{
-  width:100%;
-  margin-top:8px;
-  padding:14px;
-  border:none;
-  border-radius:18px;
-  font-size:16px;
-  font-weight:600;
-  color:#fff;
+/* ─── RARITY ───────────────────────────────────────────────── */
+.r-Common   {color:var(--r-common)}
+.r-Rare     {color:var(--r-rare)}
+.r-Epic     {color:var(--r-epic)}
+.r-Legendary{color:var(--r-legend)}
+
+.rarity-badge{
+  display:inline-flex;align-items:center;
+  font-size:10px;font-weight:800;
+  letter-spacing:.4px;text-transform:uppercase;
+  padding:3px 9px;border-radius:50px;
+}
+.rarity-badge.Common   {background:#2a2a2a;color:var(--r-common)}
+.rarity-badge.Rare     {background:linear-gradient(90deg,#0277bd,#29b6f6);color:#fff}
+.rarity-badge.Epic     {background:linear-gradient(90deg,#6a1b9a,#ce93d8);color:#fff}
+.rarity-badge.Legendary{background:linear-gradient(90deg,#e65100,#ffd54f);color:#1a0a00}
+
+/* ─── CAGE CARD ────────────────────────────────────────────── */
+.cage-card{position:relative;padding-top:18px}
+.cage-stripe{
+  position:absolute;top:0;left:0;right:0;height:4px;
+  border-radius:var(--radius) var(--radius) 0 0;
+}
+.cage-card.Common    .cage-stripe{background:var(--r-common)}
+.cage-card.Rare      .cage-stripe{background:linear-gradient(90deg,#29b6f6,#0277bd)}
+.cage-card.Epic      .cage-stripe{background:linear-gradient(90deg,#ce93d8,#7b1fa2)}
+.cage-card.Legendary .cage-stripe{background:linear-gradient(90deg,#ffd54f,#e65100)}
+.cage-card.Rare      {box-shadow:0 0 0 1px #4fc3f725}
+.cage-card.Epic      {box-shadow:0 0 0 1px #ce93d825}
+.cage-card.Legendary {box-shadow:0 0 0 1px #ffd54f40}
+
+.cage-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cage-head-left{display:flex;align-items:center;gap:10px}
+.cage-head-emoji{font-size:24px}
+.cage-head-name{font-size:15px;font-weight:700}
+.cage-head-rarity{margin-top:3px}
+.cage-bonus-tag{
+  font-size:12px;font-weight:700;opacity:.5;
+  background:rgba(255,255,255,.07);
+  padding:4px 10px;border-radius:8px;
+}
+
+.slots-bar{display:flex;gap:4px;margin:10px 0 12px}
+.slot{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.08);transition:background .25s}
+.slot.filled.Common   {background:var(--r-common)}
+.slot.filled.Rare     {background:var(--r-rare)}
+.slot.filled.Epic     {background:var(--r-epic)}
+.slot.filled.Legendary{background:var(--r-legend)}
+
+.cat-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.cat-row:last-child{border-bottom:none}
+.cat-row-emoji{font-size:24px;width:32px;text-align:center;flex-shrink:0}
+.cat-row-info{flex:1;min-width:0}
+.cat-row-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-row-sub{font-size:12px;opacity:.45;margin-top:1px}
+.cat-row-btn{
+  background:rgba(255,255,255,.07);border:none;color:rgba(255,255,255,.6);
+  width:32px;height:32px;border-radius:8px;
+  font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;padding:0;margin:0;transition:background .15s;
+}
+.cat-row-btn:active{background:rgba(255,255,255,.15)}
+
+.cage-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+.cage-income-label{font-size:12px;opacity:.4}
+.cage-income-value{font-size:14px;font-weight:700;color:var(--accent2)}
+.cage-empty-state{
+  text-align:center;padding:16px 0 6px;
+  font-size:13px;opacity:.3;
+}
+
+/* ─── INCOME BANNER ────────────────────────────────────────── */
+.income-banner{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);border-radius:var(--radius);
+  padding:12px 16px;margin-bottom:10px;
+}
+.income-banner .lbl{font-size:12px;opacity:.45}
+.income-banner .val{font-size:20px;font-weight:800;color:var(--accent2)}
+
+/* ─── BTN ──────────────────────────────────────────────────── */
+.btn{
+  width:100%;padding:14px;border:none;border-radius:var(--radius);
+  font-size:15px;font-weight:700;color:#fff;cursor:pointer;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
-  cursor:pointer;
+  transition:transform .1s,opacity .1s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:6px;
 }
-button.secondary{
-  background:#666;
+.btn:active{transform:scale(.97);opacity:.85}
+.btn.secondary{background:rgba(255,255,255,.1)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+
+/* ─── GACHA SCREEN ─────────────────────────────────────────── */
+.gacha-hero{
+  background:var(--bg2);border-radius:24px;
+  padding:28px 16px;text-align:center;
+  margin-bottom:10px;
+}
+.gacha-hero .g-icon{
+  font-size:68px;display:block;margin-bottom:18px;
+  animation:gacha-wobble 3.5s ease-in-out infinite;
+}
+@keyframes gacha-wobble{0%,100%{transform:rotate(0) scale(1)}20%{transform:rotate(-4deg) scale(1.03)}50%{transform:rotate(4deg) scale(1.03)}80%{transform:rotate(-2deg)}}
+.gacha-chances{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:20px;
+}
+.chance-pill{
+  font-size:11px;font-weight:700;
+  padding:4px 12px;border-radius:50px;
+  background:rgba(255,255,255,.06);
 }
 
-/* ===== BOTTOM MENU ===== */
-.menu{
-  position:fixed;
-  bottom:12px;
-  left:0;
-  right:0;
-  display:flex;
-  justify-content:center;
-  gap:12px;
-}
-.menu button{
-  width:64px;
-  height:64px;
-  border-radius:20px;
-  font-size:26px;
-  padding:0;
-  box-shadow:0 6px 18px rgba(0,0,0,.3);
+/* ─── CAT LIST ITEM ────────────────────────────────────────── */
+.cat-list-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--bg2);
+  border-radius:14px;margin-bottom:6px;
+  border-left:3px solid var(--c,#555);
 }
 
-/* ===== SMALL ===== */
-.small{opacity:.7;font-size:14px}
+/* ─── SHOP ─────────────────────────────────────────────────── */
+.shop-stats{display:flex;gap:6px;margin:10px 0}
+.shop-stat{
+  flex:1;background:rgba(255,255,255,.05);
+  border-radius:10px;padding:8px;text-align:center;
+}
+.shop-stat .sv{font-size:17px;font-weight:800;display:block}
+.shop-stat .sl{font-size:10px;opacity:.45;margin-top:2px}
+.owned-badge{
+  background:#1b5e20;color:#69f0ae;
+  font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:50px;
+}
 
-/* ===== RARITY COLORS ===== */
-.rarity-Common    { color: #aaa; }
-.rarity-Rare      { color: #4fc3f7; }
-.rarity-Epic      { color: #ce93d8; }
-.rarity-Legendary { color: #ffd54f; }
+/* ─── INVENTORY ────────────────────────────────────────────── */
+.inv-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;background:var(--bg2);
+  border-radius:var(--radius);margin-bottom:8px;
+  border-left:3px solid var(--c,#555);
+}
+.inv-emoji{font-size:32px;width:44px;text-align:center;flex-shrink:0}
+.inv-info{flex:1;min-width:0}
+.inv-name{font-weight:700;font-size:14px}
+.inv-sub{display:flex;align-items:center;gap:6px;margin-top:3px}
+.inv-count{
+  background:rgba(255,255,255,.1);
+  border-radius:50px;padding:2px 9px;
+  font-size:11px;font-weight:700;
+}
+.inv-place-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;color:#fff;
+  padding:9px 14px;border-radius:10px;
+  font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;
+  margin:0;flex-shrink:0;transition:transform .1s;
+}
+.inv-place-btn:active{transform:scale(.95)}
 
-/* ===== CAGE CARDS (shared) ===== */
-.cage-card {
-  position: relative;
-  overflow: hidden;
+/* ─── PLACE MODAL ──────────────────────────────────────────── */
+#place-modal{
+  display:none;position:fixed;inset:0;z-index:400;
+  background:rgba(0,0,0,.7);
+  align-items:flex-end;justify-content:center;
 }
-.cage-card .cage-banner {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 5px;
-  border-radius: 20px 20px 0 0;
+#place-modal.open{display:flex;animation:mIn .22s ease}
+@keyframes mIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.modal-sheet{
+  background:var(--bg2);border-radius:24px 24px 0 0;
+  width:100%;max-height:72vh;overflow-y:auto;
+  padding:14px 16px;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
 }
-.cage-card.Common    .cage-banner { background: #888; }
-.cage-card.Rare      .cage-banner { background: linear-gradient(90deg,#4fc3f7,#0288d1); }
-.cage-card.Epic      .cage-banner { background: linear-gradient(90deg,#ce93d8,#7b1fa2); }
-.cage-card.Legendary .cage-banner { background: linear-gradient(90deg,#ffd54f,#ff8f00); }
+.modal-handle{
+  width:36px;height:4px;background:rgba(255,255,255,.18);
+  border-radius:2px;margin:0 auto 14px;
+}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:2px}
+.modal-sub{font-size:13px;opacity:.4;margin-bottom:14px}
+.cage-option{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:14px;margin-bottom:8px;
+  background:rgba(255,255,255,.04);
+  border:1.5px solid transparent;cursor:pointer;
+  transition:background .15s;
+}
+.cage-option.avail:hover,.cage-option.avail:active{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.15)}
+.cage-option.dim{opacity:.32;cursor:not-allowed}
+.cage-option-emoji{font-size:26px;width:36px;text-align:center;flex-shrink:0}
+.cage-option-info{flex:1}
+.cage-option-info b{font-size:14px}
+.cage-option-info small{font-size:12px;opacity:.45;display:block;margin-top:2px}
+.cage-slot-badge{
+  font-size:12px;font-weight:700;
+  padding:4px 10px;border-radius:50px;
+  background:rgba(255,255,255,.08);white-space:nowrap;
+}
 
-/* Glow border по редкости */
-.cage-card.Rare      { box-shadow: 0 0 0 1.5px #4fc3f755, 0 10px 25px rgba(0,0,0,.18); }
-.cage-card.Epic      { box-shadow: 0 0 0 1.5px #ce93d855, 0 10px 25px rgba(0,0,0,.18); }
-.cage-card.Legendary { box-shadow: 0 0 0 2px #ffd54f88, 0 10px 30px rgba(255,213,79,.15); }
-
-.cage-card .cage-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-.cage-owned-badge {
-  background: #2e7d32;
-  color: #fff;
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-weight: 700;
-  letter-spacing:.3px;
-}
-.cage-price {
-  font-size: 20px;
-  font-weight: 800;
-  margin: 4px 0 6px;
-}
-.cage-meta {
-  font-size: 13px;
-  opacity: .7;
-  margin-bottom: 6px;
-  line-height: 1.5;
-}
-.cage-stats {
-  display: flex;
-  gap: 10px;
-  margin: 8px 0;
-}
-.cage-stat {
-  flex: 1;
-  background: rgba(255,255,255,.06);
-  border-radius: 12px;
-  padding: 8px;
-  text-align: center;
-  font-size: 13px;
-}
-.cage-stat b { display:block; font-size:18px; margin-bottom:2px; }
-
-/* ===== TOAST ===== */
+/* ─── TOAST ────────────────────────────────────────────────── */
 .toast{
   position:fixed;
-  top:80px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,.85);
-  color:#fff;
-  padding:10px 22px;
-  border-radius:14px;
-  font-size:14px;
-  z-index:200;
-  opacity:0;
-  transition:opacity .3s;
-  pointer-events:none;
-  white-space:nowrap;
+  bottom:calc(76px + env(safe-area-inset-bottom,0px));
+  left:50%;transform:translateX(-50%) translateY(8px);
+  background:rgba(18,18,28,.95);color:#fff;
+  padding:10px 20px;border-radius:50px;
+  font-size:13px;font-weight:500;z-index:500;
+  opacity:0;pointer-events:none;white-space:nowrap;
+  transition:opacity .22s,transform .22s;
+  border:1px solid rgba(255,255,255,.07);
 }
-.toast.show{opacity:1;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ===== GACHA REVEAL OVERLAY ===== */
-#gacha-overlay {
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:300;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
+/* ─── GACHA OVERLAY ────────────────────────────────────────── */
+#gacha-overlay{
+  display:none;position:fixed;inset:0;z-index:600;
+  flex-direction:column;align-items:center;justify-content:center;
 }
-#gacha-overlay.visible {
-  display:flex;
-  background:rgba(0,0,0,.88);
-  animation:overlayIn .35s ease;
+#gacha-overlay.visible{
+  display:flex;background:rgba(0,0,0,.92);
+  animation:fadeIn .28s ease;
 }
-@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-/* Лучи */
-#gacha-rays {
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
-  animation:spinRays 12s linear infinite;
+#g-rays{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;animation:spin 14s linear infinite;
 }
-@keyframes spinRays { to{transform:rotate(360deg)} }
-.ray {
-  position:absolute;
-  width:110vmax;
-  height:3px;
-  transform-origin:50% 50%;
-  opacity:.18;
-}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ray{position:absolute;width:110vmax;height:2px;transform-origin:50% 50%;opacity:.14}
 
-/* Карточка кота */
-#gacha-card {
-  position:relative;
-  z-index:2;
-  width:260px;
-  border-radius:28px;
-  padding:28px 20px 24px;
-  text-align:center;
-  animation:cardFlip .55s cubic-bezier(.34,1.56,.64,1) forwards;
+#reveal-card{
+  position:relative;z-index:2;
+  width:min(280px,86vw);border-radius:28px;
+  padding:32px 24px 26px;text-align:center;
+  animation:cardPop .48s cubic-bezier(.34,1.56,.64,1) forwards;
 }
-@keyframes cardFlip {
-  0%   { opacity:0; transform:scale(.4) rotateY(90deg); }
-  60%  { opacity:1; transform:scale(1.08) rotateY(-6deg); }
-  80%  { transform:scale(.97) rotateY(2deg); }
-  100% { opacity:1; transform:scale(1) rotateY(0deg); }
+@keyframes cardPop{
+  0%  {opacity:0;transform:scale(.25) rotate(-10deg)}
+  65% {opacity:1;transform:scale(1.06) rotate(1deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+#reveal-card.Common   {background:linear-gradient(160deg,#242428,#18181c);border:1.5px solid #444}
+#reveal-card.Rare     {background:linear-gradient(160deg,#0a2033,#0d1b2e);border:1.5px solid #4fc3f7;box-shadow:0 0 40px #4fc3f728}
+#reveal-card.Epic     {background:linear-gradient(160deg,#210d38,#1a0828);border:1.5px solid #ce93d8;box-shadow:0 0 50px #ce93d838}
+#reveal-card.Legendary{background:linear-gradient(160deg,#2d1800,#1a0e00);border:1.5px solid #ffd54f;box-shadow:0 0 60px #ffd54f48}
+
+#reveal-emoji{font-size:80px;display:block;margin-bottom:14px;line-height:1}
+.bounce #reveal-emoji{animation:catBounce 1.3s ease-in-out infinite .5s}
+@keyframes catBounce{0%,100%{transform:translateY(0) scale(1)}45%{transform:translateY(-14px) scale(1.09)}}
+#reveal-name{font-size:22px;font-weight:800;margin:10px 0 4px}
+#reveal-income{font-size:14px;opacity:.55;margin-bottom:14px}
+
+#reveal-close{
+  margin-top:22px;z-index:2;
+  width:min(200px,72vw);
+  padding:14px;border:none;border-radius:var(--radius);
+  font-size:15px;font-weight:700;color:#fff;
+  background:rgba(255,255,255,.1);cursor:pointer;
+  animation:fadeIn .3s ease .62s both;
+  border:1px solid rgba(255,255,255,.1);
 }
 
-#gacha-card.Common    { background:linear-gradient(160deg,#2a2a2a,#1a1a1a); border:2px solid #555; }
-#gacha-card.Rare      { background:linear-gradient(160deg,#0a2a3e,#0d1b2a); border:2px solid #4fc3f7;
-                         box-shadow:0 0 40px 6px #4fc3f755; }
-#gacha-card.Epic      { background:linear-gradient(160deg,#2a1040,#1a0828); border:2px solid #ce93d8;
-                         box-shadow:0 0 50px 10px #ce93d866; }
-#gacha-card.Legendary { background:linear-gradient(160deg,#2e1a00,#1a1000); border:2px solid #ffd54f;
-                         box-shadow:0 0 60px 14px #ffd54f88; }
+.particle{
+  position:absolute;border-radius:2px;pointer-events:none;
+  animation:pFall var(--d) ease-out var(--dl) forwards;
+}
+@keyframes pFall{0%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(.05)}}
 
-#gacha-emoji {
-  font-size:80px;
-  display:block;
-  line-height:1;
-  margin-bottom:10px;
-}
-.anim-bounce #gacha-emoji { animation:catBounce 1.2s ease infinite .6s; }
-@keyframes catBounce {
-  0%,100%{ transform:translateY(0) scale(1); }
-  45%    { transform:translateY(-12px) scale(1.08); }
-}
-
-#gacha-name {
-  font-size:22px;
-  font-weight:800;
-  margin:8px 0 4px;
-}
-#gacha-income { font-size:15px; opacity:.75; margin-bottom:14px; }
-
-#gacha-rarity-badge {
-  display:inline-block;
-  padding:5px 18px;
-  border-radius:50px;
-  font-size:13px;
-  font-weight:800;
-  letter-spacing:.5px;
-  text-transform:uppercase;
-  margin-bottom:10px;
-}
-#gacha-card.Common    #gacha-rarity-badge { background:#444; color:#ccc; }
-#gacha-card.Rare      #gacha-rarity-badge { background:linear-gradient(90deg,#0288d1,#4fc3f7); color:#fff; }
-#gacha-card.Epic      #gacha-rarity-badge { background:linear-gradient(90deg,#7b1fa2,#ce93d8); color:#fff; }
-#gacha-card.Legendary #gacha-rarity-badge { background:linear-gradient(90deg,#ff8f00,#ffd54f); color:#1a0a00; }
-
-#gacha-close {
-  margin-top:22px;
-  z-index:2;
-  width:180px;
-  padding:14px;
-  border:none;
-  border-radius:18px;
-  font-size:16px;
-  font-weight:700;
-  color:#fff;
-  background:rgba(255,255,255,.12);
-  cursor:pointer;
-  animation:fadeInBtn .3s ease .7s both;
-}
-@keyframes fadeInBtn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
-
-/* Частицы */
-.particle {
-  position:absolute;
-  width:8px; height:8px;
-  border-radius:2px;
-  pointer-events:none;
-  animation:particleFall var(--dur) ease-out var(--delay) forwards;
-}
-@keyframes particleFall {
-  0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
-  100% { transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(.2); opacity:0; }
-}
-
-/* Рарность инвентаря */
-.inv-card.Rare      { border-left:3px solid #4fc3f7; }
-.inv-card.Epic      { border-left:3px solid #ce93d8; }
-.inv-card.Legendary { border-left:3px solid #ffd54f; }
+/* ─── EMPTY STATE ──────────────────────────────────────────── */
+.empty{text-align:center;padding:32px 16px;opacity:.35;font-size:14px;line-height:1.9}
+.empty-icon{font-size:40px;display:block;margin-bottom:8px}
 </style>
 </head>
-
 <body>
-
-<button id="shop-btn" onclick="go(2)">🛒</button>
 
 <div class="header">
   <h1>🐱 Gacha Cats</h1>
-  <div class="balance">💰 <span id="coins">0</span></div>
+  <div class="balance-pill">💰 <span id="coins">0</span></div>
 </div>
 
-<!-- ===== SCREENS ===== -->
 <div class="carousel" id="carousel">
-  <div class="screen" id="screen-main"></div>
+  <div class="screen" id="screen-home"></div>
   <div class="screen" id="screen-gacha"></div>
   <div class="screen" id="screen-shop"></div>
-  <div class="screen" id="screen-inventory"></div>
+  <div class="screen" id="screen-inv"></div>
 </div>
 
-<!-- ===== GACHA OVERLAY ===== -->
-<div id="gacha-overlay" onclick="closeGachaOverlay()">
-  <div id="gacha-rays"></div>
-  <div id="gacha-card" onclick="event.stopPropagation()">
-    <span id="gacha-emoji">🐱</span>
-    <div id="gacha-rarity-badge">Common</div>
-    <div id="gacha-name">Кот</div>
-    <div id="gacha-income">+1💰/с</div>
-  </div>
-  <button id="gacha-close" onclick="closeGachaOverlay()">Забрать! 🎉</button>
-</div>
+<nav class="nav">
+  <button class="nav-btn active" id="nav-0" onclick="go(0)"><span class="icon">🏠</span>Клетки</button>
+  <button class="nav-btn"        id="nav-1" onclick="go(1)"><span class="icon">🎰</span>Гача</button>
+  <button class="nav-btn"        id="nav-2" onclick="go(2)"><span class="icon">🛒</span>Магазин</button>
+  <button class="nav-btn"        id="nav-3" onclick="go(3)"><span class="icon">🎒</span>Инвентарь</button>
+</nav>
 
-<!-- ===== MENU ===== -->
-<div class="menu">
-  <button onclick="go(0)">🏠</button>
-  <button onclick="go(1)">🎰</button>
-  <button onclick="go(3)">🎒</button>
-</div>
-
-<!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
 
+<!-- PLACE MODAL -->
+<div id="place-modal" onclick="closePlaceModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Выбери клетку</div>
+    <div class="modal-sub"   id="modal-sub"></div>
+    <div id="modal-cages"></div>
+    <button class="btn secondary" onclick="closePlaceModal()" style="margin-top:4px">Отмена</button>
+  </div>
+</div>
+
+<!-- GACHA OVERLAY -->
+<div id="gacha-overlay" onclick="closeReveal()">
+  <div id="g-rays"></div>
+  <div id="reveal-card" onclick="event.stopPropagation()">
+    <span id="reveal-emoji">🐱</span>
+    <div id="reveal-badge" class="rarity-badge Common">Common</div>
+    <div id="reveal-name">Кот</div>
+    <div id="reveal-income">+1💰/с</div>
+  </div>
+  <button id="reveal-close" onclick="closeReveal()">Забрать! 🎉</button>
+</div>
+
 <script>
-// ===== TELEGRAM INIT =====
+/* ── TELEGRAM ──────────────────────────────────────────────── */
 const tg = (typeof Telegram !== 'undefined') ? Telegram.WebApp : null;
-if (tg) tg.expand();
+if(tg) tg.expand();
+function haptic(t='light'){ try{tg?.HapticFeedback?.impactOccurred(t)}catch(e){} }
+function hapticN(t='success'){ try{tg?.HapticFeedback?.notificationOccurred(t)}catch(e){} }
 
-// ===== HAPTIC FEEDBACK =====
-function haptic(type = 'light') {
-  // type: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
-  try { tg?.HapticFeedback?.impactOccurred(type); } catch(e) {}
-}
-function hapticNotification(type = 'success') {
-  // type: 'error' | 'success' | 'warning'
-  try { tg?.HapticFeedback?.notificationOccurred(type); } catch(e) {}
-}
-
-// ===== DATA =====
-const CAT_TEMPLATES = [
+/* ── DATA ──────────────────────────────────────────────────── */
+const CATS = [
   {emoji:"😺", name:"Обычный кот",   income:1,  rarity:"Common"},
   {emoji:"😸", name:"Полосатый кот", income:2,  rarity:"Common"},
   {emoji:"🦁", name:"Рыжий кот",     income:5,  rarity:"Rare"},
-  {emoji:"🐈‍⬛",name:"Чёрный кот",  income:12, rarity:"Epic"},
-  {emoji:"👾", name:"Космокот",       income:30, rarity:"Legendary"},
+  {emoji:"🐯", name:"Тигровый кот",  income:8,  rarity:"Rare"},
+  {emoji:"🐈‍⬛",name:"Чёрный кот",  income:15, rarity:"Epic"},
+  {emoji:"🦊", name:"Лисокот",       income:20, rarity:"Epic"},
+  {emoji:"👾", name:"Космокот",       income:50, rarity:"Legendary"},
 ];
 
-const RARITY_COLORS = {
-  Common:    { ray:"#888",    label:"⬜ Common" },
-  Rare:      { ray:"#4fc3f7", label:"🔵 Rare" },
-  Epic:      { ray:"#ce93d8", label:"🟣 Epic" },
-  Legendary: { ray:"#ffd54f", label:"🟡 Legendary" },
-};
-
-const SHOP_CAGES = [
-  { id:"wood",   emoji:"🪵", name:"Деревянная",  rarity:"Common",    slots:2, incomeBonus:1.0, price:0,    allowed:["Common"], desc:"Стартовая клетка для обычных котов." },
-  { id:"iron",   emoji:"⚙️", name:"Железная",    rarity:"Rare",      slots:3, incomeBonus:1.5, price:500,  allowed:["Common","Rare"], desc:"3 места, +50% к доходу. Для Rare и Common." },
-  { id:"magic",  emoji:"🔮", name:"Магическая",  rarity:"Epic",      slots:4, incomeBonus:2.0, price:2000, allowed:["Common","Rare","Epic"], desc:"4 места, доход ×2. Для любых котов." },
-  { id:"golden", emoji:"👑", name:"Золотая",     rarity:"Legendary", slots:5, incomeBonus:3.0, price:8000, allowed:["Common","Rare","Epic","Legendary"], desc:"5 мест, доход ×3. Для самых редких!" },
+const CAGES = [
+  {id:"wood",   emoji:"🪵", name:"Деревянная",  rarity:"Common",    slots:2, bonus:1.0, price:0,    allowed:["Common"],                         desc:"Стартовая. Только обычные коты."},
+  {id:"iron",   emoji:"⚙️", name:"Железная",    rarity:"Rare",      slots:3, bonus:1.5, price:500,  allowed:["Common","Rare"],                   desc:"3 слота, доход ×1.5"},
+  {id:"magic",  emoji:"🔮", name:"Магическая",  rarity:"Epic",      slots:4, bonus:2.0, price:2000, allowed:["Common","Rare","Epic"],             desc:"4 слота, доход ×2"},
+  {id:"golden", emoji:"👑", name:"Золотая",     rarity:"Legendary", slots:5, bonus:3.0, price:8000, allowed:["Common","Rare","Epic","Legendary"], desc:"5 слотов, доход ×3"},
 ];
 
-// ===== STATE =====
-let state = null;
+const WEIGHTS = {Common:70, Rare:25, Epic:4, Legendary:1};
+const RL = {Common:"⬜ Common", Rare:"🔵 Rare", Epic:"🟣 Epic", Legendary:"🟡 Legendary"};
+const RC = {Common:"#9e9e9e", Rare:"#4fc3f7", Epic:"#ce93d8", Legendary:"#ffd54f"};
 
-function defaultState() {
-  return { coins:300, inventory:[], cages:[], lastTick:Date.now() };
+/* ── STATE ─────────────────────────────────────────────────── */
+let S = null;
+const CK = "gacha_v2";
+
+function fresh(){ return {coins:300, inventory:[], cages:[], lastTick:Date.now()} }
+
+function ensure(){
+  if(!S.cages.length)     S.cages.push({...CAGES[0], cats:[]});
+  if(!S.inventory.length) S.inventory.push({...CATS[0]});
 }
 
-// ===== CLOUD STORAGE =====
-const CLOUD_KEY = "gacha_state_v1";
-
-function cloudSave() {
-  if (!tg?.CloudStorage) return;
-  try {
-    tg.CloudStorage.setItem(CLOUD_KEY, JSON.stringify(state), (err) => {
-      if (err) console.warn("Cloud save error:", err);
-    });
-  } catch(e) {}
+function save(){
+  try{localStorage.setItem(CK, JSON.stringify(S))}catch(e){}
+  if(tg?.CloudStorage) tg.CloudStorage.setItem(CK, JSON.stringify(S), ()=>{});
 }
 
-function cloudLoad(callback) {
-  if (!tg?.CloudStorage) { callback(null); return; }
-  try {
-    tg.CloudStorage.getItem(CLOUD_KEY, (err, value) => {
-      if (err || !value) { callback(null); return; }
-      try { callback(JSON.parse(value)); }
-      catch(e) { callback(null); }
-    });
-  } catch(e) { callback(null); }
-}
-
-function save() {
-  try { localStorage.setItem("gacha_safe", JSON.stringify(state)); } catch(e) {}
-  cloudSave();
-}
-
-function initState(loaded) {
-  state = loaded || null;
-  if (!state) {
-    try { state = JSON.parse(localStorage.getItem("gacha_safe")); } catch(e) {}
-  }
-  if (!state) state = defaultState();
-  if (!state.cages.length) state.cages.push({ ...SHOP_CAGES[0], cats:[] });
-  if (!state.inventory.length) state.inventory.push({ ...CAT_TEMPLATES[0] });
-  render();
-  startTick();
-}
-
-// ===== TOAST =====
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2200);
-}
-
-// ===== PASSIVE INCOME =====
-function calcPassiveIncome() {
-  const now = Date.now();
-  const elapsed = (now - (state.lastTick || now)) / 1000;
-  state.lastTick = now;
-  let total = 0;
-  state.cages.forEach(cage => {
-    const bonus = cage.incomeBonus || 1.0;
-    cage.cats.forEach(cat => { total += cat.income * bonus; });
+function cloudLoad(cb){
+  if(!tg?.CloudStorage){cb(null);return}
+  tg.CloudStorage.getItem(CK,(err,v)=>{
+    if(err||!v){cb(null);return}
+    try{cb(JSON.parse(v))}catch(e){cb(null)}
   });
-  state.coins += total * elapsed;
 }
 
-function startTick() {
-  setInterval(() => {
-    calcPassiveIncome();
+function boot(loaded){
+  S = loaded;
+  if(!S){ try{S=JSON.parse(localStorage.getItem(CK))}catch(e){} }
+  if(!S) S = fresh();
+  ensure();
+  render();
+  setInterval(()=>{
+    tick();
+    document.getElementById("coins").textContent = fmt(S.coins);
     save();
-    document.getElementById("coins").textContent = Math.floor(state.coins);
-  }, 5000);
+  }, 4000);
 }
 
-// ===== NAV =====
-let currentIndex = 0;
-function go(i) {
+function fmt(n){
+  n = Math.floor(n);
+  if(n>=1000000) return (n/1000000).toFixed(1)+"M";
+  if(n>=10000)   return (n/1000).toFixed(1)+"K";
+  return n.toLocaleString();
+}
+
+/* ── INCOME ────────────────────────────────────────────────── */
+function tick(){
+  const now = Date.now();
+  const dt  = Math.min((now-(S.lastTick||now))/1000, 7200);
+  S.lastTick = now;
+  S.coins += totalIncome() * dt;
+}
+
+function totalIncome(){
+  let t=0;
+  S.cages.forEach(c=>{ const b=c.bonus||1; c.cats.forEach(cat=>t+=cat.income*b) });
+  return t;
+}
+
+/* ── NAV ───────────────────────────────────────────────────── */
+let cur=0;
+function go(i){
   haptic('light');
-  currentIndex = i;
-  document.getElementById("carousel").style.transform = `translateX(-${i * 25}%)`;
+  cur=i;
+  document.getElementById("carousel").style.transform=`translateX(-${i*25}%)`;
+  document.querySelectorAll(".nav-btn").forEach((b,j)=>b.classList.toggle("active",j===i));
   render();
 }
 
-// ===== GACHA OVERLAY =====
-const RARITY_CAT_EMOJIS = {
-  Common:    ["😺","😸","🐱"],
-  Rare:      ["🦁","🐯","🐅"],
-  Epic:      ["🐈‍⬛","🦊","🐺"],
-  Legendary: ["👾","🌟","✨"],
-};
+/* ── TOAST ─────────────────────────────────────────────────── */
+let toastT;
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove("show"),2200);
+}
 
-function spawnParticles(rarity) {
-  const overlay = document.getElementById("gacha-overlay");
-  const color = RARITY_COLORS[rarity]?.ray || "#fff";
-  const colors = rarity === "Legendary"
-    ? ["#ffd54f","#ff8f00","#ffcc02","#fff","#ff6f00"]
-    : rarity === "Epic"
-    ? ["#ce93d8","#9c27b0","#e1bee7","#fff"]
-    : rarity === "Rare"
-    ? ["#4fc3f7","#0288d1","#b3e5fc","#fff"]
-    : ["#aaa","#ccc","#fff"];
+/* ── ROLL ──────────────────────────────────────────────────── */
+function roll(){
+  if(S.coins<50){toast("Нужно 50💰");hapticN('error');return}
+  S.coins-=50; haptic('medium');
+  const r=Math.random()*100; let cum=0,rarity="Common";
+  for(const [k,w] of Object.entries(WEIGHTS)){cum+=w;if(r<cum){rarity=k;break}}
+  const pool=CATS.filter(c=>c.rarity===rarity);
+  const cat={...pool[Math.floor(Math.random()*pool.length)]};
+  S.inventory.push(cat);
+  save(); render(); showReveal(cat);
+}
 
-  const count = rarity === "Legendary" ? 40 : rarity === "Epic" ? 28 : rarity === "Rare" ? 18 : 10;
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement("div");
-    p.className = "particle";
-    const angle = Math.random() * 360;
-    const dist = 80 + Math.random() * 200;
-    const tx = Math.cos(angle * Math.PI / 180) * dist;
-    const ty = Math.sin(angle * Math.PI / 180) * dist - 80;
-    p.style.cssText = `
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      left:calc(50% + ${(Math.random()-0.5)*40}px);
-      top:calc(50% + ${(Math.random()-0.5)*40}px);
-      --tx:${tx}px; --ty:${ty}px;
-      --rot:${Math.random()*720-360}deg;
-      --dur:${0.6 + Math.random()*0.8}s;
-      --delay:${Math.random()*0.3}s;
-      border-radius:${Math.random()>0.5?'50%':'2px'};
-      width:${5+Math.random()*8}px; height:${5+Math.random()*8}px;
-    `;
-    overlay.appendChild(p);
-    setTimeout(() => p.remove(), 1500);
+/* ── GACHA REVEAL ──────────────────────────────────────────── */
+function buildRays(rarity){
+  const el=document.getElementById("g-rays"); el.innerHTML="";
+  const col=RC[rarity]||"#888";
+  const n={Common:8,Rare:10,Epic:12,Legendary:16}[rarity]||8;
+  for(let i=0;i<n;i++){
+    const d=document.createElement("div"); d.className="ray";
+    d.style.cssText=`background:${col};transform:rotate(${(360/n)*i}deg)`;
+    el.appendChild(d);
   }
 }
 
-function buildRays(rarity) {
-  const color = RARITY_COLORS[rarity]?.ray || "#888";
-  const raysEl = document.getElementById("gacha-rays");
-  raysEl.innerHTML = "";
-  const count = rarity === "Legendary" ? 16 : rarity === "Epic" ? 12 : rarity === "Rare" ? 10 : 8;
-  for (let i = 0; i < count; i++) {
-    const ray = document.createElement("div");
-    ray.className = "ray";
-    ray.style.cssText = `background:${color}; transform:rotate(${(360/count)*i}deg);`;
-    raysEl.appendChild(ray);
+function spawnConfetti(rarity){
+  const ov=document.getElementById("gacha-overlay");
+  const palette={
+    Common:["#9e9e9e","#ccc","#fff"],
+    Rare:  ["#4fc3f7","#0288d1","#b3e5fc","#fff"],
+    Epic:  ["#ce93d8","#7b1fa2","#e1bee7","#fff"],
+    Legendary:["#ffd54f","#ff8f00","#fff","#ffcc02"],
+  }[rarity]||["#fff"];
+  const n={Common:10,Rare:18,Epic:28,Legendary:44}[rarity]||10;
+  for(let i=0;i<n;i++){
+    const p=document.createElement("div"); p.className="particle";
+    const a=Math.random()*360, dist=100+Math.random()*180;
+    const tx=Math.cos(a*Math.PI/180)*dist, ty=Math.sin(a*Math.PI/180)*dist-60;
+    const col=palette[Math.floor(Math.random()*palette.length)];
+    const sz=5+Math.random()*7;
+    p.style.cssText=`background:${col};width:${sz}px;height:${sz}px;
+      left:calc(50% + ${(Math.random()-.5)*30}px);
+      top:calc(50% + ${(Math.random()-.5)*30}px);
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      --tx:${tx}px;--ty:${ty}px;
+      --r:${Math.random()*720-360}deg;
+      --d:${.5+Math.random()*.9}s;
+      --dl:${Math.random()*.25}s`;
+    ov.appendChild(p);
+    setTimeout(()=>p.remove(),1600);
   }
 }
 
-function showGachaReveal(cat) {
-  const overlay  = document.getElementById("gacha-overlay");
-  const card     = document.getElementById("gacha-card");
-  const emojiEl  = document.getElementById("gacha-emoji");
-  const nameEl   = document.getElementById("gacha-name");
-  const incomeEl = document.getElementById("gacha-income");
-  const badgeEl  = document.getElementById("gacha-rarity-badge");
-
-  // Обновляем содержимое
-  card.className = cat.rarity + (["Epic","Legendary"].includes(cat.rarity) ? " anim-bounce" : "");
-  emojiEl.textContent = cat.emoji || "🐱";
-  nameEl.textContent  = cat.name;
-  incomeEl.textContent = `+${cat.income}💰/с`;
-  badgeEl.textContent  = RARITY_COLORS[cat.rarity]?.label || cat.rarity;
-
+function showReveal(cat){
+  const card  = document.getElementById("reveal-card");
+  const badge = document.getElementById("reveal-badge");
+  card.className = cat.rarity+(["Epic","Legendary"].includes(cat.rarity)?" bounce":"");
+  document.getElementById("reveal-emoji").textContent  = cat.emoji||"🐱";
+  document.getElementById("reveal-name").textContent   = cat.name;
+  document.getElementById("reveal-income").textContent = `+${cat.income}💰/с`;
+  badge.textContent = RL[cat.rarity]||cat.rarity;
+  badge.className   = "rarity-badge "+cat.rarity;
   buildRays(cat.rarity);
-  overlay.classList.add("visible");
-
-  setTimeout(() => spawnParticles(cat.rarity), 150);
-
-  // Haptic по редкости
-  if (cat.rarity === "Legendary") {
-    hapticNotification('success');
-    setTimeout(()=>haptic('heavy'), 200);
-    setTimeout(()=>haptic('heavy'), 450);
-  } else if (cat.rarity === "Epic") {
-    hapticNotification('success');
-    setTimeout(()=>haptic('medium'), 300);
-  } else if (cat.rarity === "Rare") {
-    hapticNotification('success');
-  } else {
-    haptic('light');
-  }
+  document.getElementById("gacha-overlay").classList.add("visible");
+  setTimeout(()=>spawnConfetti(cat.rarity),140);
+  if(cat.rarity==="Legendary"){hapticN('success');setTimeout(()=>haptic('heavy'),180);setTimeout(()=>haptic('heavy'),400)}
+  else if(cat.rarity==="Epic"){hapticN('success');setTimeout(()=>haptic('medium'),280)}
+  else if(cat.rarity==="Rare"){hapticN('success')}
 }
 
-function closeGachaOverlay() {
+function closeReveal(){
   haptic('soft');
-  const overlay = document.getElementById("gacha-overlay");
-  overlay.classList.remove("visible");
+  document.getElementById("gacha-overlay").classList.remove("visible");
 }
 
-// ===== ROLL =====
-function roll() {
-  if (state.coins < 50) { showToast("Недостаточно монет!"); hapticNotification('error'); return; }
-  state.coins -= 50;
-  haptic('medium');
+/* ── PLACE MODAL ───────────────────────────────────────────── */
+let pending=null;
 
-  const weights = { Common:70, Rare:25, Epic:4, Legendary:1 };
-  const r = Math.random() * 100;
-  let cum = 0, rarity = "Common";
-  for (const [k, w] of Object.entries(weights)) { cum += w; if (r < cum) { rarity = k; break; } }
-
-  const pool = CAT_TEMPLATES.filter(c => c.rarity === rarity);
-  const tpl  = pool[Math.floor(Math.random() * pool.length)];
-  state.inventory.push({ ...tpl });
-  save();
-  render();
-  showGachaReveal(tpl);
-}
-
-// ===== SHOP =====
-function buyCage(cageId) {
-  const tpl = SHOP_CAGES.find(c => c.id === cageId);
-  if (!tpl) return;
-  if (state.cages.find(c => c.id === cageId)) { showToast("Уже куплено!"); return; }
-  if (state.coins < tpl.price) { showToast(`Нужно ${tpl.price}💰`); hapticNotification('error'); return; }
-  state.coins -= tpl.price;
-  state.cages.push({ ...tpl, cats:[] });
-  hapticNotification('success');
-  showToast(`${tpl.emoji} ${tpl.name} куплена!`);
-  save(); render();
-}
-
-// ===== PLACE / REMOVE =====
-function place(catName, catRarity, catIncome) {
-  const cage = state.cages.find(c => c.cats.length < c.slots && c.allowed.includes(catRarity));
-  if (!cage) { showToast("Нет подходящей клетки!"); hapticNotification('warning'); return; }
-  const idx = state.inventory.findIndex(c => c.name===catName && c.rarity===catRarity && c.income===catIncome);
-  if (idx === -1) return;
-  const cat = state.inventory.splice(idx, 1)[0];
-  cage.cats.push({ ...cat });
+function openPlaceModal(name,rarity,income){
   haptic('light');
-  showToast(`${cat.name} → ${cage.name}!`);
-  save(); render();
+  pending={name,rarity,income};
+  document.getElementById("modal-title").textContent = `${CATS.find(c=>c.name===name)?.emoji||"🐱"} ${name}`;
+  document.getElementById("modal-sub").textContent   = `Редкость: ${RL[rarity]||rarity} · +${income}💰/с`;
+
+  const list=document.getElementById("modal-cages");
+  list.innerHTML="";
+  let any=false;
+
+  S.cages.forEach((cage,ci)=>{
+    const compat  = cage.allowed.includes(rarity);
+    const hasRoom = cage.cats.length < cage.slots;
+    const avail   = compat && hasRoom;
+    if(avail) any=true;
+
+    let hint="";
+    if(!compat) hint="Не принимает эту редкость";
+    else if(!hasRoom) hint="Клетка заполнена";
+    else hint=`Бонус ×${cage.bonus.toFixed(1)} → +${(income*cage.bonus).toFixed(1)}💰/с`;
+
+    const el=document.createElement("div");
+    el.className="cage-option "+(avail?"avail":"dim");
+    el.innerHTML=`
+      <div class="cage-option-emoji">${cage.emoji}</div>
+      <div class="cage-option-info">
+        <b>${cage.name}</b>
+        <small>${hint}</small>
+      </div>
+      <div class="cage-slot-badge r-${cage.rarity}">${cage.cats.length}/${cage.slots}</div>`;
+    if(avail) el.onclick=()=>confirmPlace(ci);
+    list.appendChild(el);
+  });
+
+  if(!any){
+    list.innerHTML+=`<div class="empty" style="padding:20px 0 10px">
+      <span class="empty-icon">🔒</span>Нет подходящей клетки с местом.<br>Купи новую в магазине!
+    </div>`;
+  }
+
+  document.getElementById("place-modal").classList.add("open");
 }
 
-function removeCat(ci, xi) {
-  const cat = state.cages[ci].cats.splice(xi, 1)[0];
-  state.inventory.push({ ...cat });
+function confirmPlace(ci){
+  if(!pending) return;
+  const {name,rarity,income}=pending;
+  const cage=S.cages[ci];
+  const idx=S.inventory.findIndex(c=>c.name===name&&c.rarity===rarity&&c.income===income);
+  if(idx===-1){toast("Не найден");return}
+  cage.cats.push({...S.inventory[idx]});
+  S.inventory.splice(idx,1);
+  hapticN('success');
+  toast(`${name} → ${cage.name}!`);
+  save(); render(); closePlaceModal();
+}
+
+function closePlaceModal(){
   haptic('soft');
+  document.getElementById("place-modal").classList.remove("open");
+  pending=null;
+}
+
+/* ── REMOVE CAT ────────────────────────────────────────────── */
+function removeCat(ci,xi){
+  const cat=S.cages[ci].cats.splice(xi,1)[0];
+  S.inventory.push({...cat});
+  haptic('soft');
+  toast(`${cat.name} вернулся в инвентарь`);
   save(); render();
 }
 
-// ===== INVENTORY GROUPING =====
-function groupedInventory() {
-  const map = {};
-  state.inventory.forEach(c => {
-    const k = `${c.name}|${c.rarity}|${c.income}`;
-    if (!map[k]) map[k] = { ...c, count:0 };
+/* ── BUY CAGE ──────────────────────────────────────────────── */
+function buyCage(id){
+  const tpl=CAGES.find(c=>c.id===id);
+  if(!tpl) return;
+  if(S.cages.find(c=>c.id===id)){toast("Уже куплено!");return}
+  if(S.coins<tpl.price){toast(`Нужно ${tpl.price}💰`);hapticN('error');return}
+  S.coins-=tpl.price;
+  S.cages.push({...tpl,cats:[]});
+  hapticN('success');
+  toast(`${tpl.emoji} ${tpl.name} куплена!`);
+  save(); render();
+}
+
+/* ── GROUP INVENTORY ───────────────────────────────────────── */
+function groupInv(){
+  const map={};
+  S.inventory.forEach(c=>{
+    const k=`${c.name}|${c.rarity}|${c.income}`;
+    if(!map[k]) map[k]={...c,count:0};
     map[k].count++;
   });
-  return Object.values(map);
+  const order={Legendary:0,Epic:1,Rare:2,Common:3};
+  return Object.values(map).sort((a,b)=>(order[a.rarity]||9)-(order[b.rarity]||9));
 }
 
-// ===== RENDER =====
-function render() {
-  if (!state) return;
-  calcPassiveIncome();
-  document.getElementById("coins").textContent = Math.floor(state.coins);
+/* ── RENDER ────────────────────────────────────────────────── */
+function render(){
+  if(!S) return;
+  tick();
+  document.getElementById("coins").textContent = fmt(S.coins);
 
-  const rl = { Common:"⬜ Common", Rare:"🔵 Rare", Epic:"🟣 Epic", Legendary:"🟡 Legendary" };
-
-  // HOME
-  document.getElementById("screen-main").innerHTML =
-    "<h2>🏠 Мои клетки</h2>" +
-    state.cages.map((c, ci) => {
-      const bonus = c.incomeBonus || 1.0;
-      return `<div class="card cage-card ${c.rarity}">
-        <div class="cage-banner"></div>
-        <div class="cage-header" style="margin-top:8px">
-          <b>${c.emoji} ${c.name}</b>
-          <span class="small rarity-${c.rarity}">${rl[c.rarity]||c.rarity}</span>
-        </div>
-        <div class="small" style="margin-bottom:8px">Мест: ${c.cats.length}/${c.slots} · Бонус: ×${bonus.toFixed(1)}</div>
-        ${c.cats.length
-          ? c.cats.map((x,xi)=>`
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a2a">
-                <span>${x.emoji||"🐱"} ${x.name} <span class="small rarity-${x.rarity}">[${x.rarity}]</span></span>
-                <span class="small">+${(x.income*bonus).toFixed(1)}💰/с</span>
-              </div>
-            `).join("") +
-            `<button class="secondary" style="margin-top:10px" onclick="removeCat(${ci},0)">⬅️ Забрать кота</button>`
-          : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
-      </div>`;
-    }).join("");
-
-  // GACHA
-  document.getElementById("screen-gacha").innerHTML = `
-    <h2>🎰 Гача</h2>
-    <div class="card" style="text-align:center">
-      <div style="font-size:64px;margin:10px 0">🎰</div>
-      <div style="margin-bottom:14px">
-        <span class="small rarity-Common">Common 70%</span> ·
-        <span class="small rarity-Rare">Rare 25%</span> ·
-        <span class="small rarity-Epic">Epic 4%</span> ·
-        <span class="small rarity-Legendary">Legendary 1%</span>
-      </div>
-      <button onclick="roll()">🎰 Крутить (50💰)</button>
-    </div>
-    <div class="card">
-      <b>Коты в пуле:</b><br><br>
-      ${CAT_TEMPLATES.map(c=>
-        `<span style="display:flex;justify-content:space-between;padding:4px 0">
-          <span>${c.emoji} ${c.name}</span>
-          <span class="small rarity-${c.rarity}">+${c.income}💰/с · ${c.rarity}</span>
-        </span>`
-      ).join("")}
+  /* HOME */
+  const inc=totalIncome();
+  let h=`<div class="section-title">Мои клетки</div>`;
+  if(inc>0) h+=`
+    <div class="income-banner">
+      <div><div class="lbl">Пассивный доход</div><div class="val">+${inc.toFixed(1)}💰/с</div></div>
+      <div style="font-size:32px">💰</div>
     </div>`;
-
-  // SHOP
-  const owned = new Set(state.cages.map(c=>c.id));
-  document.getElementById("screen-shop").innerHTML =
-    "<h2>🛒 Магазин клеток</h2>" +
-    SHOP_CAGES.map(cage => {
-      const isOwned = owned.has(cage.id);
-      const canAfford = state.coins >= cage.price;
-      return `<div class="card cage-card ${cage.rarity}">
-        <div class="cage-banner"></div>
-        <div class="cage-header" style="margin-top:10px">
-          <span style="font-size:17px">${cage.emoji} <b>${cage.name}</b></span>
-          ${isOwned ? `<span class="cage-owned-badge">✅ Есть</span>`
-                    : `<span class="small rarity-${cage.rarity}">${rl[cage.rarity]}</span>`}
+  h+=S.cages.map((cage,ci)=>{
+    const b=cage.bonus||1;
+    const slotsBar=Array.from({length:cage.slots},(_,i)=>{
+      const cat=cage.cats[i];
+      return `<div class="slot${cat?" filled "+cat.rarity:""}"></div>`;
+    }).join("");
+    const catsHTML=cage.cats.length
+      ? cage.cats.map((x,xi)=>`
+          <div class="cat-row">
+            <div class="cat-row-emoji">${x.emoji||"🐱"}</div>
+            <div class="cat-row-info">
+              <div class="cat-row-name">${x.name}</div>
+              <div class="cat-row-sub r-${x.rarity}">${x.rarity} · +${(x.income*b).toFixed(1)}💰/с</div>
+            </div>
+            <button class="cat-row-btn" onclick="removeCat(${ci},${xi})" title="Вернуть в инвентарь">↩</button>
+          </div>`).join("")
+      : `<div class="cage-empty-state">🐾 Пусто — добавляй котов из инвентаря</div>`;
+    const cageInc=cage.cats.reduce((s,x)=>s+x.income*b,0);
+    return `<div class="card cage-card ${cage.rarity}">
+      <div class="cage-stripe"></div>
+      <div class="cage-head">
+        <div class="cage-head-left">
+          <div class="cage-head-emoji">${cage.emoji}</div>
+          <div>
+            <div class="cage-head-name">${cage.name}</div>
+            <div class="cage-head-rarity"><span class="rarity-badge ${cage.rarity}">${RL[cage.rarity]}</span></div>
+          </div>
         </div>
-        <div class="cage-meta">📦 ${cage.slots} мест · ⚡ ×${cage.incomeBonus.toFixed(1)} к доходу</div>
-        <div class="cage-meta">🐱 ${cage.allowed.join(", ")}</div>
-        <div class="small" style="margin-bottom:10px">${cage.desc}</div>
+        <div class="cage-bonus-tag">×${b.toFixed(1)}</div>
+      </div>
+      <div class="slots-bar">${slotsBar}</div>
+      ${catsHTML}
+      ${cageInc>0?`<div class="cage-footer"><span class="cage-income-label">Доход с клетки</span><span class="cage-income-value">+${cageInc.toFixed(1)}💰/с</span></div>`:""}
+    </div>`;
+  }).join("");
+  document.getElementById("screen-home").innerHTML=h;
+
+  /* GACHA */
+  document.getElementById("screen-gacha").innerHTML=`
+    <div class="section-title">Прокрути барабан</div>
+    <div class="gacha-hero">
+      <span class="g-icon">🎰</span>
+      <div class="gacha-chances">
+        <span class="chance-pill r-Common">Common 70%</span>
+        <span class="chance-pill r-Rare">Rare 25%</span>
+        <span class="chance-pill r-Epic">Epic 4%</span>
+        <span class="chance-pill r-Legendary">Legendary 1%</span>
+      </div>
+      <button class="btn" onclick="roll()">🎰 Крутить — 50💰</button>
+    </div>
+    <div class="section-title">Коты в пуле</div>
+    ${CATS.map(c=>`
+      <div class="cat-list-item" style="--c:${RC[c.rarity]||'#555'}">
+        <span style="font-size:28px">${c.emoji}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${c.name}</div>
+          <div style="font-size:12px;opacity:.45">+${c.income}💰/с</div>
+        </div>
+        <span class="rarity-badge ${c.rarity}">${c.rarity}</span>
+      </div>`).join("")}`;
+
+  /* SHOP */
+  const owned=new Set(S.cages.map(c=>c.id));
+  document.getElementById("screen-shop").innerHTML=
+    `<div class="section-title">Магазин клеток</div>`+
+    CAGES.map(cage=>{
+      const isOwned=owned.has(cage.id);
+      const canAfford=S.coins>=cage.price;
+      return `<div class="card cage-card ${cage.rarity}" style="padding-top:20px">
+        <div class="cage-stripe"></div>
+        <div class="cage-head">
+          <div class="cage-head-left">
+            <div class="cage-head-emoji">${cage.emoji}</div>
+            <div>
+              <div class="cage-head-name">${cage.name}</div>
+              <div class="cage-head-rarity"><span class="rarity-badge ${cage.rarity}">${RL[cage.rarity]}</span></div>
+            </div>
+          </div>
+          ${isOwned?`<span class="owned-badge">✓ Куплено</span>`:""}
+        </div>
+        <div class="shop-stats">
+          <div class="shop-stat"><span class="sv">${cage.slots}</span><span class="sl">Слотов</span></div>
+          <div class="shop-stat"><span class="sv">×${cage.bonus.toFixed(1)}</span><span class="sl">Бонус</span></div>
+          <div class="shop-stat"><span class="sv" style="font-size:11px;line-height:1.3">${cage.allowed.slice(0,3).join(",")}</span><span class="sl">Коты</span></div>
+        </div>
+        <div style="font-size:13px;opacity:.4;margin-bottom:10px">${cage.desc}</div>
         ${isOwned
-          ? `<button class="secondary" disabled style="opacity:.45">Уже в коллекции</button>`
-          : cage.price===0
-            ? `<button class="secondary" disabled style="opacity:.45">Стартовая клетка</button>`
-            : `<button onclick="buyCage('${cage.id}')" ${canAfford?'':'style="opacity:.55"'}>
-                ${canAfford?'🛒':'🔒'} Купить за ${cage.price}💰
-               </button>`}
+          ?`<button class="btn secondary" disabled>Уже в коллекции</button>`
+          :cage.price===0
+            ?`<button class="btn secondary" disabled>Стартовая клетка</button>`
+            :`<button class="btn" onclick="buyCage('${cage.id}')" ${canAfford?'':'style="opacity:.55"'}>
+                ${canAfford?"🛒 Купить за":"🔒"} ${cage.price}💰
+              </button>`}
       </div>`;
     }).join("");
 
-  // INVENTORY
-  const groups = groupedInventory();
-  document.getElementById("screen-inventory").innerHTML =
-    "<h2>🎒 Инвентарь</h2>" +
-    (groups.length===0
-      ? "<div class='card'><span class='small'>Пусто — крути гачу!</span></div>"
-      : groups.map(c=>`
-          <div class="card inv-card ${c.rarity}" style="display:flex;align-items:center;gap:12px">
-            <span style="font-size:36px">${c.emoji||"🐱"}</span>
-            <div style="flex:1">
-              <b>${c.name}</b> <span class="small rarity-${c.rarity}">[${c.rarity}]</span>
-              ${c.count>1?`<span class="small"> ×${c.count}</span>`:""}
-              <div class="small">+${c.income}💰/с</div>
-            </div>
-            <button class="secondary" style="width:auto;padding:10px 14px;margin:0"
-              onclick="place(${JSON.stringify(c.name)},${JSON.stringify(c.rarity)},${c.income})">➕</button>
+  /* INVENTORY */
+  const groups=groupInv();
+  let inv=`<div class="section-title">Инвентарь (${S.inventory.length} котов)</div>`;
+  if(!groups.length){
+    inv+=`<div class="empty"><span class="empty-icon">📦</span>Инвентарь пуст.<br>Иди крути гачу!</div>`;
+  } else {
+    inv+=groups.map(c=>`
+      <div class="inv-item ${c.rarity}" style="--c:${RC[c.rarity]||'#555'}">
+        <div class="inv-emoji">${c.emoji||"🐱"}</div>
+        <div class="inv-info">
+          <div class="inv-name">${c.name} ${c.count>1?`<span class="inv-count">×${c.count}</span>`:""}</div>
+          <div class="inv-sub">
+            <span style="font-size:12px;opacity:.5">+${c.income}💰/с</span>
+            <span class="rarity-badge ${c.rarity}">${c.rarity}</span>
           </div>
-        `).join(""));
+        </div>
+        <button class="inv-place-btn"
+          onclick="openPlaceModal(${JSON.stringify(c.name)},${JSON.stringify(c.rarity)},${c.income})">
+          ➕ В клетку
+        </button>
+      </div>`).join("");
+  }
+  document.getElementById("screen-inv").innerHTML=inv;
 }
 
-// ===== SWIPE =====
-let sx=0, sy=0;
-document.body.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+/* ── SWIPE ─────────────────────────────────────────────────── */
+let sx=0,sy=0;
+document.body.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
 document.body.addEventListener("touchend",e=>{
-  const dx=e.changedTouches[0].clientX-sx;
-  const dy=e.changedTouches[0].clientY-sy;
-  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){
-    if(dx<0&&currentIndex<3)go(currentIndex+1);
-    if(dx>0&&currentIndex>0)go(currentIndex-1);
+  const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>55 && Math.abs(dx)>Math.abs(dy)*1.5){
+    if(dx<0&&cur<3) go(cur+1);
+    if(dx>0&&cur>0) go(cur-1);
   }
 },{passive:true});
 
-// ===== START: сначала пробуем Cloud Storage =====
-cloudLoad(cloudData => {
-  initState(cloudData);
-});
-</script>
-
-/* ===== DATA ===== */
-const CAT_TEMPLATES = [
-  {name:"Обычный кот",   income:1, rarity:"Common"},
-  {name:"Полосатый кот", income:2, rarity:"Common"},
-  {name:"Рыжий кот",     income:3, rarity:"Rare"},
-  {name:"Чёрный кот",    income:5, rarity:"Epic"},
-];
-
-// Клетки из магазина: id, редкость, слоты, цена, бонус к доходу котов внутри
-const SHOP_CAGES = [
-  {
-    id: "wood",
-    emoji: "🪵",
-    name: "Деревянная клетка",
-    rarity: "Common",
-    slots: 2,
-    incomeBonus: 1.0,
-    price: 0,        // стартовая — бесплатно (уже есть)
-    allowed: ["Common"],
-    desc: "Подходит для обычных котов. Выдаётся бесплатно."
-  },
-  {
-    id: "iron",
-    emoji: "⚙️",
-    name: "Железная клетка",
-    rarity: "Rare",
-    slots: 3,
-    incomeBonus: 1.5,
-    price: 500,
-    allowed: ["Common", "Rare"],
-    desc: "3 места, +50% к доходу котов внутри. Для Rare и Common."
-  },
-  {
-    id: "magic",
-    emoji: "🔮",
-    name: "Магическая клетка",
-    rarity: "Epic",
-    slots: 4,
-    incomeBonus: 2.0,
-    price: 2000,
-    allowed: ["Common", "Rare", "Epic"],
-    desc: "4 места, доход ×2. Подходит для любых котов."
-  },
-  {
-    id: "golden",
-    emoji: "👑",
-    name: "Золотая клетка",
-    rarity: "Legendary",
-    slots: 5,
-    incomeBonus: 3.0,
-    price: 8000,
-    allowed: ["Common", "Rare", "Epic", "Legendary"],
-    desc: "5 мест, доход ×3. Для самых редких котов!"
-  },
-];
-
-/* ===== STATE ===== */
-let state;
-try {
-  state = JSON.parse(localStorage.getItem("gacha_safe")) || null;
-} catch(e) {
-  state = null;
-}
-
-if (!state) {
-  state = {
-    coins: 300,
-    inventory: [],
-    cages: [],
-    lastTick: Date.now()
-  };
-}
-
-// Гарантируем наличие стартовой клетки
-if (!state.cages.length) {
-  const starter = SHOP_CAGES[0];
-  state.cages.push({ ...starter, cats: [] });
-}
-
-// Гарантируем наличие котика
-if (!state.inventory.length) {
-  state.inventory.push({ ...CAT_TEMPLATES[0] });
-}
-
-function save() {
-  try {
-    localStorage.setItem("gacha_safe", JSON.stringify(state));
-  } catch(e) {
-    showToast("Ошибка сохранения!");
-  }
-}
-
-/* ===== TOAST ===== */
-function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2000);
-}
-
-/* ===== PASSIVE INCOME ===== */
-function calcPassiveIncome() {
-  const now = Date.now();
-  const elapsed = (now - (state.lastTick || now)) / 1000;
-  state.lastTick = now;
-  let total = 0;
-  state.cages.forEach(cage => {
-    const bonus = cage.incomeBonus || 1.0;
-    cage.cats.forEach(cat => {
-      total += cat.income * bonus;
-    });
-  });
-  state.coins += total * elapsed;
-}
-
-// Тик каждые 5 секунд
-setInterval(() => {
-  calcPassiveIncome();
-  save();
-  // Обновляем только баланс без перерисовки всего
-  document.getElementById("coins").textContent = Math.floor(state.coins);
-}, 5000);
-
-/* ===== NAV ===== */
-let currentIndex = 0;
-function go(i) {
-  currentIndex = i;
-  document.getElementById("carousel").style.transform = `translateX(-${i * 25}%)`; // FIX: было 100vw, теперь 25% от 400%
-  render();
-}
-
-/* ===== LOGIC ===== */
-function roll() {
-  if (state.coins < 50) {
-    showToast("Недостаточно монет!");
-    return;
-  }
-  state.coins -= 50;
-
-  // Взвешенный рандом по редкости
-  const weights = {Common: 70, Rare: 25, Epic: 5};
-  const roll = Math.random() * 100;
-  let cumulative = 0;
-  let rarity = "Common";
-  for (const [r, w] of Object.entries(weights)) {
-    cumulative += w;
-    if (roll < cumulative) { rarity = r; break; }
-  }
-
-  const pool = CAT_TEMPLATES.filter(c => c.rarity === rarity);
-  const tpl = pool[Math.floor(Math.random() * pool.length)];
-  state.inventory.push({ ...tpl });
-
-  showToast(`Получен: ${tpl.name} (${tpl.rarity})!`);
-  save();
-  render();
-}
-
-/* ===== SHOP: BUY CAGE ===== */
-function buyCage(cageId) {
-  const template = SHOP_CAGES.find(c => c.id === cageId);
-  if (!template) return;
-
-  // Уже куплена?
-  if (state.cages.find(c => c.id === cageId)) {
-    showToast("Эта клетка уже есть!");
-    return;
-  }
-
-  if (state.coins < template.price) {
-    showToast(`Нужно ${template.price}💰, у тебя ${Math.floor(state.coins)}💰`);
-    return;
-  }
-
-  state.coins -= template.price;
-  state.cages.push({ ...template, cats: [] });
-  showToast(`${template.emoji} ${template.name} куплена!`);
-  save();
-  render();
-}
-
-function place(catName, catRarity, catIncome) {
-  // Ищем первую подходящую клетку с местом для этой редкости
-  const cage = state.cages.find(c =>
-    c.cats.length < c.slots && c.allowed.includes(catRarity)
-  );
-
-  if (!cage) {
-    showToast("Нет подходящей клетки с местом!");
-    return;
-  }
-
-  const idx = state.inventory.findIndex(c =>
-    c.name === catName && c.rarity === catRarity && c.income === catIncome
-  );
-  if (idx === -1) return;
-
-  const cat = state.inventory[idx];
-  cage.cats.push({ ...cat });
-  state.inventory.splice(idx, 1);
-
-  showToast(`${cat.name} помещён в ${cage.name}!`);
-  save();
-  render();
-}
-
-function removeCat(cageIdx, catIdx) {
-  const cat = state.cages[cageIdx].cats[catIdx];
-  state.inventory.push({ ...cat });
-  state.cages[cageIdx].cats.splice(catIdx, 1);
-  save();
-  render();
-}
-
-/* ===== INVENTORY GROUPING ===== */
-function groupedInventory() {
-  const map = {};
-  state.inventory.forEach(c => {
-    const k = c.name + "|" + c.rarity + "|" + c.income;
-    if (!map[k]) map[k] = { ...c, count: 0 };
-    map[k].count++;
-  });
-  return Object.values(map);
-}
-
-/* ===== RENDER ===== */
-// FIX: используем getElementById вместо обращения по id как глобальной переменной
-function render() {
-  calcPassiveIncome();
-  document.getElementById("coins").textContent = Math.floor(state.coins);
-
-  // === MAIN (клетки) ===
-  const rarityLabel = { Common:"⬜ Common", Rare:"🔵 Rare", Epic:"🟣 Epic", Legendary:"🟡 Legendary" };
-  // (используется также в магазине)
-  document.getElementById("screen-main").innerHTML =
-    "<h2>🏠 Мои клетки</h2>" +
-    state.cages.map((c, ci) => {
-      const bonus = c.incomeBonus || 1.0;
-      return `
-        <div class="card cage-card ${c.rarity}">
-          <div class="cage-banner"></div>
-          <div class="cage-header" style="margin-top:8px">
-            <b>${c.emoji} ${c.name}</b>
-            <span class="small rarity-${c.rarity}">${rarityLabel[c.rarity] || c.rarity}</span>
-          </div>
-          <div class="small" style="margin-bottom:8px">
-            Мест: ${c.cats.length}/${c.slots} · Бонус дохода: ×${bonus.toFixed(1)}
-          </div>
-          ${c.cats.length
-            ? c.cats.map((x, xi) => `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #333">
-                  <span>🐱 ${x.name} <span class="small rarity-${x.rarity}">[${x.rarity}]</span></span>
-                  <span class="small">+${(x.income * bonus).toFixed(1)}💰/с</span>
-                </div>
-              `).join("") +
-              `<button class="secondary" style="margin-top:10px" onclick="removeCat(${ci}, 0)">⬅️ Забрать кота</button>`
-            : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
-        </div>
-      `;
-    }).join("");
-
-  // === GACHA ===
-  document.getElementById("screen-gacha").innerHTML = `
-    <h2>🎰 Гача</h2>
-    <div class="card">
-      <p>Шансы: Common 70% · Rare 25% · Epic 5%</p>
-      <button onclick="roll()">🎰 Крутить (50💰)</button>
-    </div>
-    <div class="card">
-      <b>Все коты:</b><br>
-      ${CAT_TEMPLATES.map(c =>
-        `🐱 ${c.name} — +${c.income}💰/с <span class="small">[${c.rarity}]</span>`
-      ).join("<br>")}
-    </div>`;
-
-  // === SHOP ===
-  const ownedIds = new Set(state.cages.map(c => c.id));
-  document.getElementById("screen-shop").innerHTML =
-    "<h2>🛒 Магазин клеток</h2>" +
-    SHOP_CAGES.map(cage => {
-      const owned = ownedIds.has(cage.id);
-      const canAfford = state.coins >= cage.price;
-      return `
-        <div class="card cage-card ${cage.rarity}">
-          <div class="cage-banner"></div>
-          <div class="cage-header" style="margin-top:10px">
-            <span style="font-size:18px">${cage.emoji} <b>${cage.name}</b></span>
-            ${owned
-              ? `<span class="cage-owned-badge">✅ Куплено</span>`
-              : `<span class="small rarity-${cage.rarity}">${rarityLabel[cage.rarity]}</span>`
-            }
-          </div>
-          <div class="cage-meta">📦 Мест: ${cage.slots} &nbsp;|&nbsp; ⚡ Бонус: ×${cage.incomeBonus.toFixed(1)}</div>
-          <div class="cage-meta">🐱 Принимает: ${cage.allowed.join(", ")}</div>
-          <div class="small" style="margin-bottom:8px">${cage.desc}</div>
-          ${owned
-            ? `<button class="secondary" disabled style="opacity:.5;cursor:default">Уже есть в коллекции</button>`
-            : cage.price === 0
-              ? `<button class="secondary" disabled style="opacity:.5">Стартовая клетка</button>`
-              : `<button onclick="buyCage('${cage.id}')" ${canAfford ? '' : 'style="opacity:.55"'}>
-                   ${canAfford ? '🛒' : '🔒'} Купить за ${cage.price}💰
-                 </button>`
-          }
-        </div>
-      `;
-    }).join("");
-
-  // === INVENTORY ===
-  const groups = groupedInventory();
-  document.getElementById("screen-inventory").innerHTML =
-    "<h2>🎒 Инвентарь</h2>" +
-    (groups.length === 0
-      ? "<div class='card'><span class='small'>Инвентарь пуст — крути гачу!</span></div>"
-      : groups.map(c => `
-          <div class="card">
-            🐱 <b>${c.name}</b> ×${c.count}<br>
-            💰 +${c.income}/с &nbsp; <span class="small">[${c.rarity}]</span>
-            <button class="secondary"
-              onclick="place(${JSON.stringify(c.name)}, ${JSON.stringify(c.rarity)}, ${c.income})">
-              ➕ В клетку
-            </button>
-          </div>
-        `).join(""));
-}
-
+/* ── BOOT ──────────────────────────────────────────────────── */
+cloudLoad(data=>boot(data));
 </script>
 </body>
 </html>
