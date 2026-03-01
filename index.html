@@ -14,8 +14,8 @@
 body{
   margin:0;
   font-family:Inter,Arial,sans-serif;
-  background:var(--tg-theme-bg-color);
-  color:var(--tg-theme-text-color);
+  background:var(--tg-theme-bg-color,#111);
+  color:var(--tg-theme-text-color,#fff);
   overflow:hidden;
 }
 
@@ -55,6 +55,8 @@ body{
   width:100vw;
   padding:12px;
   overflow-y:auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 /* ===== CARDS ===== */
@@ -103,6 +105,15 @@ button.secondary{
 
 /* ===== SMALL ===== */
 .small{opacity:.7;font-size:14px}
+
+/* ===== SCROLLBAR ===== */
+.screen::-webkit-scrollbar {
+  width:6px;
+}
+.screen::-webkit-scrollbar-thumb {
+  background:rgba(255,255,255,0.2);
+  border-radius:3px;
+}
 </style>
 </head>
 
@@ -140,10 +151,11 @@ tg.expand();
 const CAT_TEMPLATES = [
  {name:"Обычный кот",income:1,rarity:"Common"},
  {name:"Полосатый кот",income:2,rarity:"Common"},
+ {name:"Серый кот",income:3,rarity:"Rare"},
 ];
 
 const CAGE_TYPES = [
- {emoji:"🪵",name:"Деревянная",slots:2,allowed:["Common"]},
+ {emoji:"🪵",name:"Деревянная клетка",slots:2,allowed:["Common","Rare"]},
 ];
 
 /* ===== STATE ===== */
@@ -154,6 +166,7 @@ let state = JSON.parse(localStorage.getItem("gacha_safe")) || {
   lastTick:Date.now()
 };
 
+// Стартовая клетка и кот
 if(!state.cages.length){
   state.cages.push({...CAGE_TYPES[0],cats:[]});
 }
@@ -173,19 +186,23 @@ function go(i){
 
 /* ===== LOGIC ===== */
 function roll(){
-  if(state.coins<50)return;
+  if(state.coins<50){alert("Недостаточно 💰"); return;}
   state.coins-=50;
   const tpl=CAT_TEMPLATES[Math.floor(Math.random()*CAT_TEMPLATES.length)];
   state.inventory.push({...tpl});
   save();render();
 }
 
-function place(cat){
-  const cage=state.cages[0];
-  if(cage.cats.length>=cage.slots)return;
+function placeByIndex(idx){
+  const grouped = groupedInventory();
+  const c = grouped[idx];
+  const realIdx = state.inventory.findIndex(x => x.name===c.name && x.income===c.income && x.rarity===c.rarity);
+  if(realIdx===-1) return;
+  const cat = state.inventory[realIdx];
+  const cage = state.cages[0];
+  if(cage.cats.length >= cage.slots){alert("Клетка полна!"); return;}
   cage.cats.push(cat);
-  const idx=state.inventory.findIndex(c=>c.name===cat.name);
-  state.inventory.splice(idx,1);
+  state.inventory.splice(realIdx,1);
   save();render();
 }
 
@@ -202,26 +219,26 @@ function groupedInventory(){
 
 /* ===== RENDER ===== */
 function render(){
-  coins.textContent=Math.floor(state.coins);
+  document.getElementById("coins").textContent=Math.floor(state.coins);
 
-  screen-main.innerHTML="<h2>🏠 Клетка</h2>"+state.cages.map(c=>`
+  document.getElementById("screen-main").innerHTML="<h2>🏠 Клетка</h2>"+state.cages.map(c=>`
     <div class="card">
       ${c.emoji} ${c.name}<br>
       ${c.cats.map(x=>`🐱 ${x.name}`).join("<br>")||"<span class='small'>Пусто</span>"}
     </div>`).join("");
 
-  screen-gacha.innerHTML=`
+  document.getElementById("screen-gacha").innerHTML=`
     <div class="card">
       <button onclick="roll()">🎰 Крутить (50💰)</button>
     </div>`;
 
-  screen-shop.innerHTML="<h2>🛒 Магазин</h2><div class='card'>Пока пусто</div>";
+  document.getElementById("screen-shop").innerHTML="<h2>🛒 Магазин</h2><div class='card'>Пока пусто</div>";
 
-  screen-inventory.innerHTML="<h2>🎒 Инвентарь</h2>"+groupedInventory().map(c=>`
+  document.getElementById("screen-inventory").innerHTML="<h2>🎒 Инвентарь</h2>"+groupedInventory().map((c,i)=>`
     <div class="card">
       🐱 ${c.name} ×${c.count}<br>
       💰 +${c.income}
-      <button class="secondary" onclick='place(${JSON.stringify(c)})'>➕ В клетку</button>
+      <button class="secondary" onclick="placeByIndex(${i})">➕ В клетку</button>
     </div>`).join("");
 }
 
