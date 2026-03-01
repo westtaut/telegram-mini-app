@@ -285,9 +285,39 @@ function render(){
  });
 
  /* ИНВЕНТАРЬ (ОГРАНИЧЕННЫЙ) */
- const inv=document.getElementById("inventory");
- inv.innerHTML="";
- data.inventory.forEach((cat,i)=>{
+ const inv = document.getElementById("inventory");
+inv.innerHTML = "";
+
+const inventorySnapshot = [...data.inventory];
+
+inventorySnapshot.forEach((cat, i) => {
+
+  const validCages = data.cages
+    .map((c, ci) => ({ c, ci }))
+    .filter(x =>
+      x.c.allowed.includes(cat.rarity) &&
+      x.c.cats.length < x.c.slots
+    );
+
+  inv.innerHTML += `
+    <div class="card">
+      🐱 ${cat.name}<br>
+      ⭐ ${cat.rarity}<br>
+      💰 +${cat.income}/сек
+      ${
+        validCages.length
+          ? validCages.map(x => `
+            <button class="secondary"
+              onclick="placeCat(${x.ci}, ${i})">
+              ➕ В ${x.c.emoji} ${x.c.name}
+            </button>
+          `).join("")
+          : `<div class="small">❌ Подходящая клетка отсутствует</div>`
+      }
+    </div>
+  `;
+});
+
   const validCages=data.cages
     .map((c,ci)=>({c,ci}))
     .filter(x=>x.c.allowed.includes(cat.rarity)&&x.c.cats.length<x.c.slots);
