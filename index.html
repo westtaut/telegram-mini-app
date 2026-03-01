@@ -108,23 +108,221 @@ button.secondary{
 /* ===== SMALL ===== */
 .small{opacity:.7;font-size:14px}
 
+/* ===== RARITY COLORS ===== */
+.rarity-Common    { color: #aaa; }
+.rarity-Rare      { color: #4fc3f7; }
+.rarity-Epic      { color: #ce93d8; }
+.rarity-Legendary { color: #ffd54f; }
+
+/* ===== CAGE CARDS (shared) ===== */
+.cage-card {
+  position: relative;
+  overflow: hidden;
+}
+.cage-card .cage-banner {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  border-radius: 20px 20px 0 0;
+}
+.cage-card.Common    .cage-banner { background: #888; }
+.cage-card.Rare      .cage-banner { background: linear-gradient(90deg,#4fc3f7,#0288d1); }
+.cage-card.Epic      .cage-banner { background: linear-gradient(90deg,#ce93d8,#7b1fa2); }
+.cage-card.Legendary .cage-banner { background: linear-gradient(90deg,#ffd54f,#ff8f00); }
+
+/* Glow border по редкости */
+.cage-card.Rare      { box-shadow: 0 0 0 1.5px #4fc3f755, 0 10px 25px rgba(0,0,0,.18); }
+.cage-card.Epic      { box-shadow: 0 0 0 1.5px #ce93d855, 0 10px 25px rgba(0,0,0,.18); }
+.cage-card.Legendary { box-shadow: 0 0 0 2px #ffd54f88, 0 10px 30px rgba(255,213,79,.15); }
+
+.cage-card .cage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.cage-owned-badge {
+  background: #2e7d32;
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing:.3px;
+}
+.cage-price {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 4px 0 6px;
+}
+.cage-meta {
+  font-size: 13px;
+  opacity: .7;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.cage-stats {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+.cage-stat {
+  flex: 1;
+  background: rgba(255,255,255,.06);
+  border-radius: 12px;
+  padding: 8px;
+  text-align: center;
+  font-size: 13px;
+}
+.cage-stat b { display:block; font-size:18px; margin-bottom:2px; }
+
 /* ===== TOAST ===== */
 .toast{
   position:fixed;
   top:80px;
   left:50%;
   transform:translateX(-50%);
-  background:rgba(0,0,0,.8);
+  background:rgba(0,0,0,.85);
   color:#fff;
-  padding:10px 20px;
+  padding:10px 22px;
   border-radius:14px;
   font-size:14px;
-  z-index:100;
+  z-index:200;
   opacity:0;
   transition:opacity .3s;
   pointer-events:none;
+  white-space:nowrap;
 }
 .toast.show{opacity:1;}
+
+/* ===== GACHA REVEAL OVERLAY ===== */
+#gacha-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:300;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+}
+#gacha-overlay.visible {
+  display:flex;
+  background:rgba(0,0,0,.88);
+  animation:overlayIn .35s ease;
+}
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+
+/* Лучи */
+#gacha-rays {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  animation:spinRays 12s linear infinite;
+}
+@keyframes spinRays { to{transform:rotate(360deg)} }
+.ray {
+  position:absolute;
+  width:110vmax;
+  height:3px;
+  transform-origin:50% 50%;
+  opacity:.18;
+}
+
+/* Карточка кота */
+#gacha-card {
+  position:relative;
+  z-index:2;
+  width:260px;
+  border-radius:28px;
+  padding:28px 20px 24px;
+  text-align:center;
+  animation:cardFlip .55s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes cardFlip {
+  0%   { opacity:0; transform:scale(.4) rotateY(90deg); }
+  60%  { opacity:1; transform:scale(1.08) rotateY(-6deg); }
+  80%  { transform:scale(.97) rotateY(2deg); }
+  100% { opacity:1; transform:scale(1) rotateY(0deg); }
+}
+
+#gacha-card.Common    { background:linear-gradient(160deg,#2a2a2a,#1a1a1a); border:2px solid #555; }
+#gacha-card.Rare      { background:linear-gradient(160deg,#0a2a3e,#0d1b2a); border:2px solid #4fc3f7;
+                         box-shadow:0 0 40px 6px #4fc3f755; }
+#gacha-card.Epic      { background:linear-gradient(160deg,#2a1040,#1a0828); border:2px solid #ce93d8;
+                         box-shadow:0 0 50px 10px #ce93d866; }
+#gacha-card.Legendary { background:linear-gradient(160deg,#2e1a00,#1a1000); border:2px solid #ffd54f;
+                         box-shadow:0 0 60px 14px #ffd54f88; }
+
+#gacha-emoji {
+  font-size:80px;
+  display:block;
+  line-height:1;
+  margin-bottom:10px;
+}
+.anim-bounce #gacha-emoji { animation:catBounce 1.2s ease infinite .6s; }
+@keyframes catBounce {
+  0%,100%{ transform:translateY(0) scale(1); }
+  45%    { transform:translateY(-12px) scale(1.08); }
+}
+
+#gacha-name {
+  font-size:22px;
+  font-weight:800;
+  margin:8px 0 4px;
+}
+#gacha-income { font-size:15px; opacity:.75; margin-bottom:14px; }
+
+#gacha-rarity-badge {
+  display:inline-block;
+  padding:5px 18px;
+  border-radius:50px;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+#gacha-card.Common    #gacha-rarity-badge { background:#444; color:#ccc; }
+#gacha-card.Rare      #gacha-rarity-badge { background:linear-gradient(90deg,#0288d1,#4fc3f7); color:#fff; }
+#gacha-card.Epic      #gacha-rarity-badge { background:linear-gradient(90deg,#7b1fa2,#ce93d8); color:#fff; }
+#gacha-card.Legendary #gacha-rarity-badge { background:linear-gradient(90deg,#ff8f00,#ffd54f); color:#1a0a00; }
+
+#gacha-close {
+  margin-top:22px;
+  z-index:2;
+  width:180px;
+  padding:14px;
+  border:none;
+  border-radius:18px;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  background:rgba(255,255,255,.12);
+  cursor:pointer;
+  animation:fadeInBtn .3s ease .7s both;
+}
+@keyframes fadeInBtn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* Частицы */
+.particle {
+  position:absolute;
+  width:8px; height:8px;
+  border-radius:2px;
+  pointer-events:none;
+  animation:particleFall var(--dur) ease-out var(--delay) forwards;
+}
+@keyframes particleFall {
+  0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+  100% { transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(.2); opacity:0; }
+}
+
+/* Рарность инвентаря */
+.inv-card.Rare      { border-left:3px solid #4fc3f7; }
+.inv-card.Epic      { border-left:3px solid #ce93d8; }
+.inv-card.Legendary { border-left:3px solid #ffd54f; }
 </style>
 </head>
 
@@ -145,6 +343,18 @@ button.secondary{
   <div class="screen" id="screen-inventory"></div>
 </div>
 
+<!-- ===== GACHA OVERLAY ===== -->
+<div id="gacha-overlay" onclick="closeGachaOverlay()">
+  <div id="gacha-rays"></div>
+  <div id="gacha-card" onclick="event.stopPropagation()">
+    <span id="gacha-emoji">🐱</span>
+    <div id="gacha-rarity-badge">Common</div>
+    <div id="gacha-name">Кот</div>
+    <div id="gacha-income">+1💰/с</div>
+  </div>
+  <button id="gacha-close" onclick="closeGachaOverlay()">Забрать! 🎉</button>
+</div>
+
 <!-- ===== MENU ===== -->
 <div class="menu">
   <button onclick="go(0)">🏠</button>
@@ -156,9 +366,407 @@ button.secondary{
 <div class="toast" id="toast"></div>
 
 <script>
-// Безопасная инициализация Telegram WebApp
+// ===== TELEGRAM INIT =====
 const tg = (typeof Telegram !== 'undefined') ? Telegram.WebApp : null;
 if (tg) tg.expand();
+
+// ===== HAPTIC FEEDBACK =====
+function haptic(type = 'light') {
+  // type: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
+  try { tg?.HapticFeedback?.impactOccurred(type); } catch(e) {}
+}
+function hapticNotification(type = 'success') {
+  // type: 'error' | 'success' | 'warning'
+  try { tg?.HapticFeedback?.notificationOccurred(type); } catch(e) {}
+}
+
+// ===== DATA =====
+const CAT_TEMPLATES = [
+  {emoji:"😺", name:"Обычный кот",   income:1,  rarity:"Common"},
+  {emoji:"😸", name:"Полосатый кот", income:2,  rarity:"Common"},
+  {emoji:"🦁", name:"Рыжий кот",     income:5,  rarity:"Rare"},
+  {emoji:"🐈‍⬛",name:"Чёрный кот",  income:12, rarity:"Epic"},
+  {emoji:"👾", name:"Космокот",       income:30, rarity:"Legendary"},
+];
+
+const RARITY_COLORS = {
+  Common:    { ray:"#888",    label:"⬜ Common" },
+  Rare:      { ray:"#4fc3f7", label:"🔵 Rare" },
+  Epic:      { ray:"#ce93d8", label:"🟣 Epic" },
+  Legendary: { ray:"#ffd54f", label:"🟡 Legendary" },
+};
+
+const SHOP_CAGES = [
+  { id:"wood",   emoji:"🪵", name:"Деревянная",  rarity:"Common",    slots:2, incomeBonus:1.0, price:0,    allowed:["Common"], desc:"Стартовая клетка для обычных котов." },
+  { id:"iron",   emoji:"⚙️", name:"Железная",    rarity:"Rare",      slots:3, incomeBonus:1.5, price:500,  allowed:["Common","Rare"], desc:"3 места, +50% к доходу. Для Rare и Common." },
+  { id:"magic",  emoji:"🔮", name:"Магическая",  rarity:"Epic",      slots:4, incomeBonus:2.0, price:2000, allowed:["Common","Rare","Epic"], desc:"4 места, доход ×2. Для любых котов." },
+  { id:"golden", emoji:"👑", name:"Золотая",     rarity:"Legendary", slots:5, incomeBonus:3.0, price:8000, allowed:["Common","Rare","Epic","Legendary"], desc:"5 мест, доход ×3. Для самых редких!" },
+];
+
+// ===== STATE =====
+let state = null;
+
+function defaultState() {
+  return { coins:300, inventory:[], cages:[], lastTick:Date.now() };
+}
+
+// ===== CLOUD STORAGE =====
+const CLOUD_KEY = "gacha_state_v1";
+
+function cloudSave() {
+  if (!tg?.CloudStorage) return;
+  try {
+    tg.CloudStorage.setItem(CLOUD_KEY, JSON.stringify(state), (err) => {
+      if (err) console.warn("Cloud save error:", err);
+    });
+  } catch(e) {}
+}
+
+function cloudLoad(callback) {
+  if (!tg?.CloudStorage) { callback(null); return; }
+  try {
+    tg.CloudStorage.getItem(CLOUD_KEY, (err, value) => {
+      if (err || !value) { callback(null); return; }
+      try { callback(JSON.parse(value)); }
+      catch(e) { callback(null); }
+    });
+  } catch(e) { callback(null); }
+}
+
+function save() {
+  try { localStorage.setItem("gacha_safe", JSON.stringify(state)); } catch(e) {}
+  cloudSave();
+}
+
+function initState(loaded) {
+  state = loaded || null;
+  if (!state) {
+    try { state = JSON.parse(localStorage.getItem("gacha_safe")); } catch(e) {}
+  }
+  if (!state) state = defaultState();
+  if (!state.cages.length) state.cages.push({ ...SHOP_CAGES[0], cats:[] });
+  if (!state.inventory.length) state.inventory.push({ ...CAT_TEMPLATES[0] });
+  render();
+  startTick();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ===== PASSIVE INCOME =====
+function calcPassiveIncome() {
+  const now = Date.now();
+  const elapsed = (now - (state.lastTick || now)) / 1000;
+  state.lastTick = now;
+  let total = 0;
+  state.cages.forEach(cage => {
+    const bonus = cage.incomeBonus || 1.0;
+    cage.cats.forEach(cat => { total += cat.income * bonus; });
+  });
+  state.coins += total * elapsed;
+}
+
+function startTick() {
+  setInterval(() => {
+    calcPassiveIncome();
+    save();
+    document.getElementById("coins").textContent = Math.floor(state.coins);
+  }, 5000);
+}
+
+// ===== NAV =====
+let currentIndex = 0;
+function go(i) {
+  haptic('light');
+  currentIndex = i;
+  document.getElementById("carousel").style.transform = `translateX(-${i * 25}%)`;
+  render();
+}
+
+// ===== GACHA OVERLAY =====
+const RARITY_CAT_EMOJIS = {
+  Common:    ["😺","😸","🐱"],
+  Rare:      ["🦁","🐯","🐅"],
+  Epic:      ["🐈‍⬛","🦊","🐺"],
+  Legendary: ["👾","🌟","✨"],
+};
+
+function spawnParticles(rarity) {
+  const overlay = document.getElementById("gacha-overlay");
+  const color = RARITY_COLORS[rarity]?.ray || "#fff";
+  const colors = rarity === "Legendary"
+    ? ["#ffd54f","#ff8f00","#ffcc02","#fff","#ff6f00"]
+    : rarity === "Epic"
+    ? ["#ce93d8","#9c27b0","#e1bee7","#fff"]
+    : rarity === "Rare"
+    ? ["#4fc3f7","#0288d1","#b3e5fc","#fff"]
+    : ["#aaa","#ccc","#fff"];
+
+  const count = rarity === "Legendary" ? 40 : rarity === "Epic" ? 28 : rarity === "Rare" ? 18 : 10;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement("div");
+    p.className = "particle";
+    const angle = Math.random() * 360;
+    const dist = 80 + Math.random() * 200;
+    const tx = Math.cos(angle * Math.PI / 180) * dist;
+    const ty = Math.sin(angle * Math.PI / 180) * dist - 80;
+    p.style.cssText = `
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      left:calc(50% + ${(Math.random()-0.5)*40}px);
+      top:calc(50% + ${(Math.random()-0.5)*40}px);
+      --tx:${tx}px; --ty:${ty}px;
+      --rot:${Math.random()*720-360}deg;
+      --dur:${0.6 + Math.random()*0.8}s;
+      --delay:${Math.random()*0.3}s;
+      border-radius:${Math.random()>0.5?'50%':'2px'};
+      width:${5+Math.random()*8}px; height:${5+Math.random()*8}px;
+    `;
+    overlay.appendChild(p);
+    setTimeout(() => p.remove(), 1500);
+  }
+}
+
+function buildRays(rarity) {
+  const color = RARITY_COLORS[rarity]?.ray || "#888";
+  const raysEl = document.getElementById("gacha-rays");
+  raysEl.innerHTML = "";
+  const count = rarity === "Legendary" ? 16 : rarity === "Epic" ? 12 : rarity === "Rare" ? 10 : 8;
+  for (let i = 0; i < count; i++) {
+    const ray = document.createElement("div");
+    ray.className = "ray";
+    ray.style.cssText = `background:${color}; transform:rotate(${(360/count)*i}deg);`;
+    raysEl.appendChild(ray);
+  }
+}
+
+function showGachaReveal(cat) {
+  const overlay  = document.getElementById("gacha-overlay");
+  const card     = document.getElementById("gacha-card");
+  const emojiEl  = document.getElementById("gacha-emoji");
+  const nameEl   = document.getElementById("gacha-name");
+  const incomeEl = document.getElementById("gacha-income");
+  const badgeEl  = document.getElementById("gacha-rarity-badge");
+
+  // Обновляем содержимое
+  card.className = cat.rarity + (["Epic","Legendary"].includes(cat.rarity) ? " anim-bounce" : "");
+  emojiEl.textContent = cat.emoji || "🐱";
+  nameEl.textContent  = cat.name;
+  incomeEl.textContent = `+${cat.income}💰/с`;
+  badgeEl.textContent  = RARITY_COLORS[cat.rarity]?.label || cat.rarity;
+
+  buildRays(cat.rarity);
+  overlay.classList.add("visible");
+
+  setTimeout(() => spawnParticles(cat.rarity), 150);
+
+  // Haptic по редкости
+  if (cat.rarity === "Legendary") {
+    hapticNotification('success');
+    setTimeout(()=>haptic('heavy'), 200);
+    setTimeout(()=>haptic('heavy'), 450);
+  } else if (cat.rarity === "Epic") {
+    hapticNotification('success');
+    setTimeout(()=>haptic('medium'), 300);
+  } else if (cat.rarity === "Rare") {
+    hapticNotification('success');
+  } else {
+    haptic('light');
+  }
+}
+
+function closeGachaOverlay() {
+  haptic('soft');
+  const overlay = document.getElementById("gacha-overlay");
+  overlay.classList.remove("visible");
+}
+
+// ===== ROLL =====
+function roll() {
+  if (state.coins < 50) { showToast("Недостаточно монет!"); hapticNotification('error'); return; }
+  state.coins -= 50;
+  haptic('medium');
+
+  const weights = { Common:70, Rare:25, Epic:4, Legendary:1 };
+  const r = Math.random() * 100;
+  let cum = 0, rarity = "Common";
+  for (const [k, w] of Object.entries(weights)) { cum += w; if (r < cum) { rarity = k; break; } }
+
+  const pool = CAT_TEMPLATES.filter(c => c.rarity === rarity);
+  const tpl  = pool[Math.floor(Math.random() * pool.length)];
+  state.inventory.push({ ...tpl });
+  save();
+  render();
+  showGachaReveal(tpl);
+}
+
+// ===== SHOP =====
+function buyCage(cageId) {
+  const tpl = SHOP_CAGES.find(c => c.id === cageId);
+  if (!tpl) return;
+  if (state.cages.find(c => c.id === cageId)) { showToast("Уже куплено!"); return; }
+  if (state.coins < tpl.price) { showToast(`Нужно ${tpl.price}💰`); hapticNotification('error'); return; }
+  state.coins -= tpl.price;
+  state.cages.push({ ...tpl, cats:[] });
+  hapticNotification('success');
+  showToast(`${tpl.emoji} ${tpl.name} куплена!`);
+  save(); render();
+}
+
+// ===== PLACE / REMOVE =====
+function place(catName, catRarity, catIncome) {
+  const cage = state.cages.find(c => c.cats.length < c.slots && c.allowed.includes(catRarity));
+  if (!cage) { showToast("Нет подходящей клетки!"); hapticNotification('warning'); return; }
+  const idx = state.inventory.findIndex(c => c.name===catName && c.rarity===catRarity && c.income===catIncome);
+  if (idx === -1) return;
+  const cat = state.inventory.splice(idx, 1)[0];
+  cage.cats.push({ ...cat });
+  haptic('light');
+  showToast(`${cat.name} → ${cage.name}!`);
+  save(); render();
+}
+
+function removeCat(ci, xi) {
+  const cat = state.cages[ci].cats.splice(xi, 1)[0];
+  state.inventory.push({ ...cat });
+  haptic('soft');
+  save(); render();
+}
+
+// ===== INVENTORY GROUPING =====
+function groupedInventory() {
+  const map = {};
+  state.inventory.forEach(c => {
+    const k = `${c.name}|${c.rarity}|${c.income}`;
+    if (!map[k]) map[k] = { ...c, count:0 };
+    map[k].count++;
+  });
+  return Object.values(map);
+}
+
+// ===== RENDER =====
+function render() {
+  if (!state) return;
+  calcPassiveIncome();
+  document.getElementById("coins").textContent = Math.floor(state.coins);
+
+  const rl = { Common:"⬜ Common", Rare:"🔵 Rare", Epic:"🟣 Epic", Legendary:"🟡 Legendary" };
+
+  // HOME
+  document.getElementById("screen-main").innerHTML =
+    "<h2>🏠 Мои клетки</h2>" +
+    state.cages.map((c, ci) => {
+      const bonus = c.incomeBonus || 1.0;
+      return `<div class="card cage-card ${c.rarity}">
+        <div class="cage-banner"></div>
+        <div class="cage-header" style="margin-top:8px">
+          <b>${c.emoji} ${c.name}</b>
+          <span class="small rarity-${c.rarity}">${rl[c.rarity]||c.rarity}</span>
+        </div>
+        <div class="small" style="margin-bottom:8px">Мест: ${c.cats.length}/${c.slots} · Бонус: ×${bonus.toFixed(1)}</div>
+        ${c.cats.length
+          ? c.cats.map((x,xi)=>`
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a2a">
+                <span>${x.emoji||"🐱"} ${x.name} <span class="small rarity-${x.rarity}">[${x.rarity}]</span></span>
+                <span class="small">+${(x.income*bonus).toFixed(1)}💰/с</span>
+              </div>
+            `).join("") +
+            `<button class="secondary" style="margin-top:10px" onclick="removeCat(${ci},0)">⬅️ Забрать кота</button>`
+          : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
+      </div>`;
+    }).join("");
+
+  // GACHA
+  document.getElementById("screen-gacha").innerHTML = `
+    <h2>🎰 Гача</h2>
+    <div class="card" style="text-align:center">
+      <div style="font-size:64px;margin:10px 0">🎰</div>
+      <div style="margin-bottom:14px">
+        <span class="small rarity-Common">Common 70%</span> ·
+        <span class="small rarity-Rare">Rare 25%</span> ·
+        <span class="small rarity-Epic">Epic 4%</span> ·
+        <span class="small rarity-Legendary">Legendary 1%</span>
+      </div>
+      <button onclick="roll()">🎰 Крутить (50💰)</button>
+    </div>
+    <div class="card">
+      <b>Коты в пуле:</b><br><br>
+      ${CAT_TEMPLATES.map(c=>
+        `<span style="display:flex;justify-content:space-between;padding:4px 0">
+          <span>${c.emoji} ${c.name}</span>
+          <span class="small rarity-${c.rarity}">+${c.income}💰/с · ${c.rarity}</span>
+        </span>`
+      ).join("")}
+    </div>`;
+
+  // SHOP
+  const owned = new Set(state.cages.map(c=>c.id));
+  document.getElementById("screen-shop").innerHTML =
+    "<h2>🛒 Магазин клеток</h2>" +
+    SHOP_CAGES.map(cage => {
+      const isOwned = owned.has(cage.id);
+      const canAfford = state.coins >= cage.price;
+      return `<div class="card cage-card ${cage.rarity}">
+        <div class="cage-banner"></div>
+        <div class="cage-header" style="margin-top:10px">
+          <span style="font-size:17px">${cage.emoji} <b>${cage.name}</b></span>
+          ${isOwned ? `<span class="cage-owned-badge">✅ Есть</span>`
+                    : `<span class="small rarity-${cage.rarity}">${rl[cage.rarity]}</span>`}
+        </div>
+        <div class="cage-meta">📦 ${cage.slots} мест · ⚡ ×${cage.incomeBonus.toFixed(1)} к доходу</div>
+        <div class="cage-meta">🐱 ${cage.allowed.join(", ")}</div>
+        <div class="small" style="margin-bottom:10px">${cage.desc}</div>
+        ${isOwned
+          ? `<button class="secondary" disabled style="opacity:.45">Уже в коллекции</button>`
+          : cage.price===0
+            ? `<button class="secondary" disabled style="opacity:.45">Стартовая клетка</button>`
+            : `<button onclick="buyCage('${cage.id}')" ${canAfford?'':'style="opacity:.55"'}>
+                ${canAfford?'🛒':'🔒'} Купить за ${cage.price}💰
+               </button>`}
+      </div>`;
+    }).join("");
+
+  // INVENTORY
+  const groups = groupedInventory();
+  document.getElementById("screen-inventory").innerHTML =
+    "<h2>🎒 Инвентарь</h2>" +
+    (groups.length===0
+      ? "<div class='card'><span class='small'>Пусто — крути гачу!</span></div>"
+      : groups.map(c=>`
+          <div class="card inv-card ${c.rarity}" style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:36px">${c.emoji||"🐱"}</span>
+            <div style="flex:1">
+              <b>${c.name}</b> <span class="small rarity-${c.rarity}">[${c.rarity}]</span>
+              ${c.count>1?`<span class="small"> ×${c.count}</span>`:""}
+              <div class="small">+${c.income}💰/с</div>
+            </div>
+            <button class="secondary" style="width:auto;padding:10px 14px;margin:0"
+              onclick="place(${JSON.stringify(c.name)},${JSON.stringify(c.rarity)},${c.income})">➕</button>
+          </div>
+        `).join(""));
+}
+
+// ===== SWIPE =====
+let sx=0, sy=0;
+document.body.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+document.body.addEventListener("touchend",e=>{
+  const dx=e.changedTouches[0].clientX-sx;
+  const dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)){
+    if(dx<0&&currentIndex<3)go(currentIndex+1);
+    if(dx>0&&currentIndex>0)go(currentIndex-1);
+  }
+},{passive:true});
+
+// ===== START: сначала пробуем Cloud Storage =====
+cloudLoad(cloudData => {
+  initState(cloudData);
+});
+</script>
 
 /* ===== DATA ===== */
 const CAT_TEMPLATES = [
@@ -168,8 +776,52 @@ const CAT_TEMPLATES = [
   {name:"Чёрный кот",    income:5, rarity:"Epic"},
 ];
 
-const CAGE_TYPES = [
-  {emoji:"🪵", name:"Деревянная", slots:2, allowed:["Common","Rare","Epic"]},
+// Клетки из магазина: id, редкость, слоты, цена, бонус к доходу котов внутри
+const SHOP_CAGES = [
+  {
+    id: "wood",
+    emoji: "🪵",
+    name: "Деревянная клетка",
+    rarity: "Common",
+    slots: 2,
+    incomeBonus: 1.0,
+    price: 0,        // стартовая — бесплатно (уже есть)
+    allowed: ["Common"],
+    desc: "Подходит для обычных котов. Выдаётся бесплатно."
+  },
+  {
+    id: "iron",
+    emoji: "⚙️",
+    name: "Железная клетка",
+    rarity: "Rare",
+    slots: 3,
+    incomeBonus: 1.5,
+    price: 500,
+    allowed: ["Common", "Rare"],
+    desc: "3 места, +50% к доходу котов внутри. Для Rare и Common."
+  },
+  {
+    id: "magic",
+    emoji: "🔮",
+    name: "Магическая клетка",
+    rarity: "Epic",
+    slots: 4,
+    incomeBonus: 2.0,
+    price: 2000,
+    allowed: ["Common", "Rare", "Epic"],
+    desc: "4 места, доход ×2. Подходит для любых котов."
+  },
+  {
+    id: "golden",
+    emoji: "👑",
+    name: "Золотая клетка",
+    rarity: "Legendary",
+    slots: 5,
+    incomeBonus: 3.0,
+    price: 8000,
+    allowed: ["Common", "Rare", "Epic", "Legendary"],
+    desc: "5 мест, доход ×3. Для самых редких котов!"
+  },
 ];
 
 /* ===== STATE ===== */
@@ -189,9 +841,10 @@ if (!state) {
   };
 }
 
-// Гарантируем наличие клетки
+// Гарантируем наличие стартовой клетки
 if (!state.cages.length) {
-  state.cages.push({ ...CAGE_TYPES[0], cats: [] });
+  const starter = SHOP_CAGES[0];
+  state.cages.push({ ...starter, cats: [] });
 }
 
 // Гарантируем наличие котика
@@ -218,15 +871,16 @@ function showToast(msg) {
 /* ===== PASSIVE INCOME ===== */
 function calcPassiveIncome() {
   const now = Date.now();
-  const elapsed = (now - (state.lastTick || now)) / 1000; // секунды
+  const elapsed = (now - (state.lastTick || now)) / 1000;
   state.lastTick = now;
-  let totalIncome = 0;
+  let total = 0;
   state.cages.forEach(cage => {
+    const bonus = cage.incomeBonus || 1.0;
     cage.cats.forEach(cat => {
-      totalIncome += cat.income;
+      total += cat.income * bonus;
     });
   });
-  state.coins += totalIncome * elapsed;
+  state.coins += total * elapsed;
 }
 
 // Тик каждые 5 секунд
@@ -272,11 +926,37 @@ function roll() {
   render();
 }
 
+/* ===== SHOP: BUY CAGE ===== */
+function buyCage(cageId) {
+  const template = SHOP_CAGES.find(c => c.id === cageId);
+  if (!template) return;
+
+  // Уже куплена?
+  if (state.cages.find(c => c.id === cageId)) {
+    showToast("Эта клетка уже есть!");
+    return;
+  }
+
+  if (state.coins < template.price) {
+    showToast(`Нужно ${template.price}💰, у тебя ${Math.floor(state.coins)}💰`);
+    return;
+  }
+
+  state.coins -= template.price;
+  state.cages.push({ ...template, cats: [] });
+  showToast(`${template.emoji} ${template.name} куплена!`);
+  save();
+  render();
+}
+
 function place(catName, catRarity, catIncome) {
-  // FIX: принимаем примитивы вместо объекта с count, чтобы точно найти нужный кот
-  const cage = state.cages[0];
-  if (cage.cats.length >= cage.slots) {
-    showToast("Клетка заполнена!");
+  // Ищем первую подходящую клетку с местом для этой редкости
+  const cage = state.cages.find(c =>
+    c.cats.length < c.slots && c.allowed.includes(catRarity)
+  );
+
+  if (!cage) {
+    showToast("Нет подходящей клетки с местом!");
     return;
   }
 
@@ -289,7 +969,7 @@ function place(catName, catRarity, catIncome) {
   cage.cats.push({ ...cat });
   state.inventory.splice(idx, 1);
 
-  showToast(`${cat.name} помещён в клетку!`);
+  showToast(`${cat.name} помещён в ${cage.name}!`);
   save();
   render();
 }
@@ -320,20 +1000,34 @@ function render() {
   document.getElementById("coins").textContent = Math.floor(state.coins);
 
   // === MAIN (клетки) ===
+  const rarityLabel = { Common:"⬜ Common", Rare:"🔵 Rare", Epic:"🟣 Epic", Legendary:"🟡 Legendary" };
+  // (используется также в магазине)
   document.getElementById("screen-main").innerHTML =
-    "<h2>🏠 Клетки</h2>" +
-    state.cages.map((c, ci) => `
-      <div class="card">
-        <b>${c.emoji} ${c.name}</b>
-        <span class="small"> (${c.cats.length}/${c.slots})</span><br><br>
-        ${c.cats.length
-          ? c.cats.map((x, xi) => `
-              🐱 ${x.name} <span class="small">+${x.income}💰/с</span>
-              <button class="secondary" style="margin-top:6px" onclick="removeCat(${ci},${xi})">⬅️ Забрать</button>
-            `).join("<hr style='border-color:#333'>")
-          : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
-      </div>
-    `).join("");
+    "<h2>🏠 Мои клетки</h2>" +
+    state.cages.map((c, ci) => {
+      const bonus = c.incomeBonus || 1.0;
+      return `
+        <div class="card cage-card ${c.rarity}">
+          <div class="cage-banner"></div>
+          <div class="cage-header" style="margin-top:8px">
+            <b>${c.emoji} ${c.name}</b>
+            <span class="small rarity-${c.rarity}">${rarityLabel[c.rarity] || c.rarity}</span>
+          </div>
+          <div class="small" style="margin-bottom:8px">
+            Мест: ${c.cats.length}/${c.slots} · Бонус дохода: ×${bonus.toFixed(1)}
+          </div>
+          ${c.cats.length
+            ? c.cats.map((x, xi) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #333">
+                  <span>🐱 ${x.name} <span class="small rarity-${x.rarity}">[${x.rarity}]</span></span>
+                  <span class="small">+${(x.income * bonus).toFixed(1)}💰/с</span>
+                </div>
+              `).join("") +
+              `<button class="secondary" style="margin-top:10px" onclick="removeCat(${ci}, 0)">⬅️ Забрать кота</button>`
+            : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
+        </div>
+      `;
+    }).join("");
 
   // === GACHA ===
   document.getElementById("screen-gacha").innerHTML = `
@@ -350,8 +1044,36 @@ function render() {
     </div>`;
 
   // === SHOP ===
+  const ownedIds = new Set(state.cages.map(c => c.id));
   document.getElementById("screen-shop").innerHTML =
-    "<h2>🛒 Магазин</h2><div class='card'>Скоро здесь появятся товары!</div>";
+    "<h2>🛒 Магазин клеток</h2>" +
+    SHOP_CAGES.map(cage => {
+      const owned = ownedIds.has(cage.id);
+      const canAfford = state.coins >= cage.price;
+      return `
+        <div class="card cage-card ${cage.rarity}">
+          <div class="cage-banner"></div>
+          <div class="cage-header" style="margin-top:10px">
+            <span style="font-size:18px">${cage.emoji} <b>${cage.name}</b></span>
+            ${owned
+              ? `<span class="cage-owned-badge">✅ Куплено</span>`
+              : `<span class="small rarity-${cage.rarity}">${rarityLabel[cage.rarity]}</span>`
+            }
+          </div>
+          <div class="cage-meta">📦 Мест: ${cage.slots} &nbsp;|&nbsp; ⚡ Бонус: ×${cage.incomeBonus.toFixed(1)}</div>
+          <div class="cage-meta">🐱 Принимает: ${cage.allowed.join(", ")}</div>
+          <div class="small" style="margin-bottom:8px">${cage.desc}</div>
+          ${owned
+            ? `<button class="secondary" disabled style="opacity:.5;cursor:default">Уже есть в коллекции</button>`
+            : cage.price === 0
+              ? `<button class="secondary" disabled style="opacity:.5">Стартовая клетка</button>`
+              : `<button onclick="buyCage('${cage.id}')" ${canAfford ? '' : 'style="opacity:.55"'}>
+                   ${canAfford ? '🛒' : '🔒'} Купить за ${cage.price}💰
+                 </button>`
+          }
+        </div>
+      `;
+    }).join("");
 
   // === INVENTORY ===
   const groups = groupedInventory();
@@ -371,28 +1093,6 @@ function render() {
         `).join(""));
 }
 
-/* ===== SWIPE ===== */
-// FIX: добавлена проверка, чтобы вертикальный скролл не вызывал переключение экранов
-let swipeStartX = 0;
-let swipeStartY = 0;
-
-document.body.addEventListener("touchstart", e => {
-  swipeStartX = e.touches[0].clientX;
-  swipeStartY = e.touches[0].clientY;
-}, { passive: true });
-
-document.body.addEventListener("touchend", e => {
-  const dx = e.changedTouches[0].clientX - swipeStartX;
-  const dy = e.changedTouches[0].clientY - swipeStartY;
-  // Горизонтальный свайп должен быть преобладающим
-  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
-    if (dx < 0 && currentIndex < 3) go(currentIndex + 1);
-    if (dx > 0 && currentIndex > 0) go(currentIndex - 1);
-  }
-}, { passive: true });
-
-/* ===== START ===== */
-render();
 </script>
 </body>
 </html>
