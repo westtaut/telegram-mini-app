@@ -49,6 +49,7 @@ const activeMatches = new Map(); // matchId -> matchData
 ══════════════════════════════════════ */
 function getLeaderboard() {
   const arr = Array.from(players.values())
+    .filter(p => !p.uid.startsWith('bot_') && !p.uid.startsWith('local_'))  // only real players
     .sort((a, b) => b.pvpScore - a.pvpScore)
     .slice(0, 100)
     .map((p, i) => ({
@@ -61,6 +62,7 @@ function getLeaderboard() {
       pvpLosses: p.pvpLosses || 0,
       topRarity: p.topRarity || 'Common',
       level: p.maxLevel || 1,
+      lastSeen: p.lastSeen || 0,
     }));
   return arr;
 }
@@ -121,8 +123,9 @@ app.get('/health', (req, res) => {
 ══════════════════════════════════════ */
 
 // Save player state (called on app load & periodically)
+// Also stores full game state for cross-device sync
 app.post('/api/player/sync', (req, res) => {
-  const { uid, name, data } = req.body;
+  const { uid, name, data, fullState } = req.body;
   if (!uid) return res.status(400).json({ error: 'uid required' });
 
   const existing = players.get(uid) || {};
@@ -137,11 +140,40 @@ app.post('/api/player/sync', (req, res) => {
     topRarity: data?.topRarity ?? existing.topRarity ?? 'Common',
     maxLevel: data?.maxLevel ?? existing.maxLevel ?? 1,
     maxPower: data?.maxPower ?? existing.maxPower ?? 10,
-    lastSeen: Date.now(),
+    lastSeen: data?.lastSeen || Date.now(), (only if provided and newer)
+    fullState: fullState || existing.fullState || null,
+    fullStateAt: fullState ? Date.now() : (existing.fullStateAt || 0),
   });
 
   broadcastLeaderboard();
   res.json({ ok: true, rank: getLeaderboard().findIndex(p => p.uid === uid) + 1 });
+});
+
+// Full state save — called when user wants to sync cross-device
+app.post('/api/player/save', (req, res) => {
+  const { uid, name, state } = req.body;
+  if (!uid || !state) return res.status(400).json({ error: 'uid and state required' });
+
+  const existing = players.get(uid) || {};
+  players.set(uid, {
+    ...existing,
+    uid,
+    name: name || existing.name || 'Игрок',
+    fullState: state,
+    fullStateAt: Date.now(),
+    lastSeen: Date.now(),
+  });
+
+  res.json({ ok: true, savedAt: Date.now() });
+});
+
+// Full state load — called on app boot to restore cross-device progress
+app.get('/api/player/:uid/load', (req, res) => {
+  const player = players.get(req.params.uid);
+  if (!player || !player.fullState) {
+    return res.json({ ok: false, state: null, savedAt: null });
+  }
+  res.json({ ok: true, state: player.fullState, savedAt: player.fullStateAt });
 });
 
 // Get leaderboard
@@ -212,11 +244,16 @@ io.on('connection', (socket) => {
 
 function tryMatch() {
   if (pvpQueue.length < 2) {
-    // If only 1 player waiting >5s, match with bot
-    const lonely = pvpQueue.find(q => Date.now() - q.joinedAt > 5000);
-    if (lonely) {
-      matchWithBot(lonely);
-    }
+    // No bots — just keep waiting for a real player
+    // Emit waiting status update every 10s so client knows queue is still alive
+    pvpQueue.forEach(q => {
+      const waiting = Math.floor((Date.now() - q.joinedAt) / 1000);
+      io.to(q.socketId).emit('pvp_queue_status', {
+        status: 'searching',
+        queueSize: pvpQueue.length,
+        waitSeconds: waiting,
+      });
+    });
     return;
   }
 
@@ -267,49 +304,24 @@ function tryMatch() {
   if (pvpQueue.length >= 2) setTimeout(tryMatch, 100);
 }
 
-function matchWithBot(player) {
-  const idx = pvpQueue.indexOf(player);
-  if (idx !== -1) pvpQueue.splice(idx, 1);
-
-  const BOTS = [
-    { name: 'КотоБот 🤖', emoji: '🤖', power: Math.floor(player.fighter.power * (0.7 + Math.random() * 0.6)) },
-    { name: 'МегаМурка 😈', emoji: '😈', power: Math.floor(player.fighter.power * (0.8 + Math.random() * 0.5)) },
-    { name: 'ЗлойТигр 🐯', emoji: '🐯', power: Math.floor(player.fighter.power * (0.9 + Math.random() * 0.4)) },
-  ];
-  const bot = BOTS[Math.floor(Math.random() * BOTS.length)];
-  const botUid = 'bot_' + Date.now();
-
-  const result = simulateBattle(
-    { ...player.fighter, uid: player.uid },
-    { power: bot.power, uid: botUid }
-  );
-
-  const matchId = 'bot_' + Date.now().toString(36);
-
-  io.to(player.socketId).emit('pvp_battle_result', {
-    matchId,
-    isBot: true,
-    result,
-    you: { uid: player.uid, fighter: player.fighter, name: player.name || 'Вы' },
-    opponent: { uid: botUid, fighter: bot, name: bot.name },
-  });
-
-  const won = result.winner === player.uid;
-  const p = players.get(player.uid);
-  if (p) {
-    if (won) { p.pvpScore += 8; p.pvpWins = (p.pvpWins || 0) + 1; }
-    else { p.pvpScore = Math.max(0, (p.pvpScore || 0) - 3); p.pvpLosses = (p.pvpLosses || 0) + 1; }
-    players.set(player.uid, p);
-  }
-
-  setTimeout(broadcastLeaderboard, 500);
-}
-
-// Auto-match lonely players every 8 seconds
+// Broadcast queue size updates every 5s so waiting players see live count
 setInterval(() => {
-  const lonely = pvpQueue.filter(q => Date.now() - q.joinedAt > 8000);
-  lonely.forEach(matchWithBot);
-}, 8000);
+  if (pvpQueue.length > 0) {
+    pvpQueue.forEach(q => {
+      const waiting = Math.floor((Date.now() - q.joinedAt) / 1000);
+      io.to(q.socketId).emit('pvp_queue_status', {
+        status: 'searching',
+        queueSize: pvpQueue.length,
+        waitSeconds: waiting,
+      });
+    });
+  }
+}, 5000);
+
+// Also try to match any newcomers on interval
+setInterval(() => {
+  if (pvpQueue.length >= 2) tryMatch();
+}, 2000);
 
 // Broadcast leaderboard every 30s
 setInterval(broadcastLeaderboard, 30000);
