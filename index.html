@@ -2,38 +2,83 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Telegram Mini App</title>
+  <title>Telegram Clicker</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
       background: var(--tg-theme-bg-color);
       color: var(--tg-theme-text-color);
       font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
       padding: 20px;
     }
-    button {
-      padding: 15px;
-      font-size: 16px;
-      width: 100%;
+
+    h1 {
+      margin-top: 30px;
+    }
+
+    #tap {
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      border: none;
+      font-size: 28px;
+      color: #fff;
+      margin-top: 40px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    #tap:active {
+      transform: scale(0.92);
+    }
+
+    .score {
+      font-size: 32px;
+      margin-top: 25px;
+    }
+
+    .user {
+      opacity: 0.7;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
 
-<h2>Привет, <span id="name"></span> 👋</h2>
+<h1>🔥 CLICKER 🔥</h1>
 
-<button onclick="sendData()">Отправить данные боту</button>
+<div class="user" id="user"></div>
+
+<button id="tap">TAP</button>
+
+<div class="score">
+  💰 <span id="score">0</span>
+</div>
 
 <script>
   const tg = window.Telegram.WebApp;
-  tg.expand(); // разворачивает приложение
+  tg.expand();
 
-  document.getElementById("name").innerText =
-    tg.initDataUnsafe.user?.first_name || "друг";
+  const user = tg.initDataUnsafe.user;
+  document.getElementById("user").innerText =
+    user ? `Игрок: ${user.first_name}` : "Игрок";
 
-  function sendData() {
-    tg.sendData("Кнопка нажата 🚀");
-  }
+  let score = localStorage.getItem("score") || 0;
+  score = parseInt(score);
+
+  const scoreEl = document.getElementById("score");
+  scoreEl.innerText = score;
+
+  document.getElementById("tap").addEventListener("click", () => {
+    score++;
+    scoreEl.innerText = score;
+    localStorage.setItem("score", score);
+
+    tg.HapticFeedback.impactOccurred("light");
+  });
 </script>
 
 </body>
