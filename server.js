@@ -140,7 +140,8 @@ app.post('/api/player/sync', (req, res) => {
     topRarity: data?.topRarity ?? existing.topRarity ?? 'Common',
     maxLevel: data?.maxLevel ?? existing.maxLevel ?? 1,
     maxPower: data?.maxPower ?? existing.maxPower ?? 10,
-    lastSeen: data?.lastSeen || Date.now(), (only if provided and newer)
+    lastSeen: data?.lastSeen || Date.now(),
+    // Store full game state for cross-device sync (only if provided and newer)
     fullState: fullState || existing.fullState || null,
     fullStateAt: fullState ? Date.now() : (existing.fullStateAt || 0),
   });
