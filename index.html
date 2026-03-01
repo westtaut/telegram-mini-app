@@ -14,7 +14,7 @@
 body{
   margin:0;
   font-family:Inter,Arial,sans-serif;
-  background:var(--tg-theme-bg-color,#111);
+  background:var(--tg-theme-bg-color,#1a1a2e);
   color:var(--tg-theme-text-color,#fff);
   overflow:hidden;
 }
@@ -42,6 +42,7 @@ body{
   background:linear-gradient(135deg,var(--accent2),var(--accent));
   color:#fff;
   z-index:10;
+  cursor:pointer;
 }
 
 /* ===== CAROUSEL ===== */
@@ -52,11 +53,11 @@ body{
   transition:transform .35s cubic-bezier(.25,.8,.25,1);
 }
 .screen{
-  width:100vw;
+  width:25%; /* FIX: было 100vw, но внутри flex-контейнера шириной 400% нужно 25% */
   padding:12px;
+  box-sizing:border-box;
   overflow-y:auto;
-  -webkit-overflow-scrolling: touch;
-  box-sizing: border-box;
+  overflow-x:hidden;
 }
 
 /* ===== CARDS ===== */
@@ -79,6 +80,7 @@ button{
   font-weight:600;
   color:#fff;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
+  cursor:pointer;
 }
 button.secondary{
   background:#666;
@@ -106,14 +108,23 @@ button.secondary{
 /* ===== SMALL ===== */
 .small{opacity:.7;font-size:14px}
 
-/* ===== SCROLLBAR ===== */
-.screen::-webkit-scrollbar {
-  width:6px;
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;
+  top:80px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.8);
+  color:#fff;
+  padding:10px 20px;
+  border-radius:14px;
+  font-size:14px;
+  z-index:100;
+  opacity:0;
+  transition:opacity .3s;
+  pointer-events:none;
 }
-.screen::-webkit-scrollbar-thumb {
-  background:rgba(255,255,255,0.2);
-  border-radius:3px;
-}
+.toast.show{opacity:1;}
 </style>
 </head>
 
@@ -128,12 +139,10 @@ button.secondary{
 
 <!-- ===== SCREENS ===== -->
 <div class="carousel" id="carousel">
-
   <div class="screen" id="screen-main"></div>
   <div class="screen" id="screen-gacha"></div>
   <div class="screen" id="screen-shop"></div>
   <div class="screen" id="screen-inventory"></div>
-
 </div>
 
 <!-- ===== MENU ===== -->
@@ -143,115 +152,244 @@ button.secondary{
   <button onclick="go(3)">🎒</button>
 </div>
 
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
 <script>
-const tg = Telegram.WebApp;
-tg.expand();
+// Безопасная инициализация Telegram WebApp
+const tg = (typeof Telegram !== 'undefined') ? Telegram.WebApp : null;
+if (tg) tg.expand();
 
 /* ===== DATA ===== */
 const CAT_TEMPLATES = [
- {name:"Обычный кот",income:1,rarity:"Common"},
- {name:"Полосатый кот",income:2,rarity:"Common"},
- {name:"Серый кот",income:3,rarity:"Rare"},
+  {name:"Обычный кот",   income:1, rarity:"Common"},
+  {name:"Полосатый кот", income:2, rarity:"Common"},
+  {name:"Рыжий кот",     income:3, rarity:"Rare"},
+  {name:"Чёрный кот",    income:5, rarity:"Epic"},
 ];
 
 const CAGE_TYPES = [
- {emoji:"🪵",name:"Деревянная клетка",slots:2,allowed:["Common","Rare"]},
+  {emoji:"🪵", name:"Деревянная", slots:2, allowed:["Common","Rare","Epic"]},
 ];
 
 /* ===== STATE ===== */
-let state = JSON.parse(localStorage.getItem("gacha_safe")) || {
-  coins:300,
-  inventory:[],
-  cages:[],
-  lastTick:Date.now()
-};
-
-// Стартовая клетка и кот
-if(!state.cages.length){
-  state.cages.push({...CAGE_TYPES[0],cats:[]});
-}
-if(!state.inventory.length){
-  state.inventory.push({...CAT_TEMPLATES[0]});
+let state;
+try {
+  state = JSON.parse(localStorage.getItem("gacha_safe")) || null;
+} catch(e) {
+  state = null;
 }
 
-function save(){localStorage.setItem("gacha_safe",JSON.stringify(state));}
+if (!state) {
+  state = {
+    coins: 300,
+    inventory: [],
+    cages: [],
+    lastTick: Date.now()
+  };
+}
+
+// Гарантируем наличие клетки
+if (!state.cages.length) {
+  state.cages.push({ ...CAGE_TYPES[0], cats: [] });
+}
+
+// Гарантируем наличие котика
+if (!state.inventory.length) {
+  state.inventory.push({ ...CAT_TEMPLATES[0] });
+}
+
+function save() {
+  try {
+    localStorage.setItem("gacha_safe", JSON.stringify(state));
+  } catch(e) {
+    showToast("Ошибка сохранения!");
+  }
+}
+
+/* ===== TOAST ===== */
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+/* ===== PASSIVE INCOME ===== */
+function calcPassiveIncome() {
+  const now = Date.now();
+  const elapsed = (now - (state.lastTick || now)) / 1000; // секунды
+  state.lastTick = now;
+  let totalIncome = 0;
+  state.cages.forEach(cage => {
+    cage.cats.forEach(cat => {
+      totalIncome += cat.income;
+    });
+  });
+  state.coins += totalIncome * elapsed;
+}
+
+// Тик каждые 5 секунд
+setInterval(() => {
+  calcPassiveIncome();
+  save();
+  // Обновляем только баланс без перерисовки всего
+  document.getElementById("coins").textContent = Math.floor(state.coins);
+}, 5000);
 
 /* ===== NAV ===== */
-let index=0;
-function go(i){
-  index=i;
-  document.getElementById("carousel").style.transform=`translateX(-${i*100}vw)`;
+let currentIndex = 0;
+function go(i) {
+  currentIndex = i;
+  document.getElementById("carousel").style.transform = `translateX(-${i * 25}%)`; // FIX: было 100vw, теперь 25% от 400%
   render();
 }
 
 /* ===== LOGIC ===== */
-function roll(){
-  if(state.coins<50){alert("Недостаточно 💰"); return;}
-  state.coins-=50;
-  const tpl=CAT_TEMPLATES[Math.floor(Math.random()*CAT_TEMPLATES.length)];
-  state.inventory.push({...tpl});
-  save();render();
+function roll() {
+  if (state.coins < 50) {
+    showToast("Недостаточно монет!");
+    return;
+  }
+  state.coins -= 50;
+
+  // Взвешенный рандом по редкости
+  const weights = {Common: 70, Rare: 25, Epic: 5};
+  const roll = Math.random() * 100;
+  let cumulative = 0;
+  let rarity = "Common";
+  for (const [r, w] of Object.entries(weights)) {
+    cumulative += w;
+    if (roll < cumulative) { rarity = r; break; }
+  }
+
+  const pool = CAT_TEMPLATES.filter(c => c.rarity === rarity);
+  const tpl = pool[Math.floor(Math.random() * pool.length)];
+  state.inventory.push({ ...tpl });
+
+  showToast(`Получен: ${tpl.name} (${tpl.rarity})!`);
+  save();
+  render();
 }
 
-function placeByIndex(idx){
-  const grouped = groupedInventory();
-  const c = grouped[idx];
-  const realIdx = state.inventory.findIndex(x => x.name===c.name && x.income===c.income && x.rarity===c.rarity);
-  if(realIdx===-1) return;
-  const cat = state.inventory[realIdx];
+function place(catName, catRarity, catIncome) {
+  // FIX: принимаем примитивы вместо объекта с count, чтобы точно найти нужный кот
   const cage = state.cages[0];
-  if(cage.cats.length >= cage.slots){alert("Клетка полна!"); return;}
-  cage.cats.push(cat);
-  state.inventory.splice(realIdx,1);
-  save();render();
+  if (cage.cats.length >= cage.slots) {
+    showToast("Клетка заполнена!");
+    return;
+  }
+
+  const idx = state.inventory.findIndex(c =>
+    c.name === catName && c.rarity === catRarity && c.income === catIncome
+  );
+  if (idx === -1) return;
+
+  const cat = state.inventory[idx];
+  cage.cats.push({ ...cat });
+  state.inventory.splice(idx, 1);
+
+  showToast(`${cat.name} помещён в клетку!`);
+  save();
+  render();
+}
+
+function removeCat(cageIdx, catIdx) {
+  const cat = state.cages[cageIdx].cats[catIdx];
+  state.inventory.push({ ...cat });
+  state.cages[cageIdx].cats.splice(catIdx, 1);
+  save();
+  render();
 }
 
 /* ===== INVENTORY GROUPING ===== */
-function groupedInventory(){
-  const map={};
-  state.inventory.forEach(c=>{
-    const k=c.name+c.rarity+c.income;
-    map[k]=map[k]||{...c,count:0};
+function groupedInventory() {
+  const map = {};
+  state.inventory.forEach(c => {
+    const k = c.name + "|" + c.rarity + "|" + c.income;
+    if (!map[k]) map[k] = { ...c, count: 0 };
     map[k].count++;
   });
   return Object.values(map);
 }
 
 /* ===== RENDER ===== */
-function render(){
-  document.getElementById("coins").textContent=Math.floor(state.coins);
+// FIX: используем getElementById вместо обращения по id как глобальной переменной
+function render() {
+  calcPassiveIncome();
+  document.getElementById("coins").textContent = Math.floor(state.coins);
 
-  document.getElementById("screen-main").innerHTML="<h2>🏠 Клетка</h2>"+state.cages.map(c=>`
-    <div class="card">
-      ${c.emoji} ${c.name}<br>
-      ${c.cats.map(x=>`🐱 ${x.name}`).join("<br>")||"<span class='small'>Пусто</span>"}
-    </div>`).join("");
+  // === MAIN (клетки) ===
+  document.getElementById("screen-main").innerHTML =
+    "<h2>🏠 Клетки</h2>" +
+    state.cages.map((c, ci) => `
+      <div class="card">
+        <b>${c.emoji} ${c.name}</b>
+        <span class="small"> (${c.cats.length}/${c.slots})</span><br><br>
+        ${c.cats.length
+          ? c.cats.map((x, xi) => `
+              🐱 ${x.name} <span class="small">+${x.income}💰/с</span>
+              <button class="secondary" style="margin-top:6px" onclick="removeCat(${ci},${xi})">⬅️ Забрать</button>
+            `).join("<hr style='border-color:#333'>")
+          : "<span class='small'>Пусто — добавь кота из инвентаря</span>"}
+      </div>
+    `).join("");
 
-  document.getElementById("screen-gacha").innerHTML=`
+  // === GACHA ===
+  document.getElementById("screen-gacha").innerHTML = `
+    <h2>🎰 Гача</h2>
     <div class="card">
+      <p>Шансы: Common 70% · Rare 25% · Epic 5%</p>
       <button onclick="roll()">🎰 Крутить (50💰)</button>
+    </div>
+    <div class="card">
+      <b>Все коты:</b><br>
+      ${CAT_TEMPLATES.map(c =>
+        `🐱 ${c.name} — +${c.income}💰/с <span class="small">[${c.rarity}]</span>`
+      ).join("<br>")}
     </div>`;
 
-  document.getElementById("screen-shop").innerHTML="<h2>🛒 Магазин</h2><div class='card'>Пока пусто</div>";
+  // === SHOP ===
+  document.getElementById("screen-shop").innerHTML =
+    "<h2>🛒 Магазин</h2><div class='card'>Скоро здесь появятся товары!</div>";
 
-  document.getElementById("screen-inventory").innerHTML="<h2>🎒 Инвентарь</h2>"+groupedInventory().map((c,i)=>`
-    <div class="card">
-      🐱 ${c.name} ×${c.count}<br>
-      💰 +${c.income}
-      <button class="secondary" onclick="placeByIndex(${i})">➕ В клетку</button>
-    </div>`).join("");
+  // === INVENTORY ===
+  const groups = groupedInventory();
+  document.getElementById("screen-inventory").innerHTML =
+    "<h2>🎒 Инвентарь</h2>" +
+    (groups.length === 0
+      ? "<div class='card'><span class='small'>Инвентарь пуст — крути гачу!</span></div>"
+      : groups.map(c => `
+          <div class="card">
+            🐱 <b>${c.name}</b> ×${c.count}<br>
+            💰 +${c.income}/с &nbsp; <span class="small">[${c.rarity}]</span>
+            <button class="secondary"
+              onclick="place(${JSON.stringify(c.name)}, ${JSON.stringify(c.rarity)}, ${c.income})">
+              ➕ В клетку
+            </button>
+          </div>
+        `).join(""));
 }
 
 /* ===== SWIPE ===== */
-let sx=0;
-document.body.addEventListener("touchstart",e=>sx=e.touches[0].clientX);
-document.body.addEventListener("touchend",e=>{
-  const dx=e.changedTouches[0].clientX-sx;
-  if(Math.abs(dx)>50){
-    if(dx<0&&index<3)go(index+1);
-    if(dx>0&&index>0)go(index-1);
+// FIX: добавлена проверка, чтобы вертикальный скролл не вызывал переключение экранов
+let swipeStartX = 0;
+let swipeStartY = 0;
+
+document.body.addEventListener("touchstart", e => {
+  swipeStartX = e.touches[0].clientX;
+  swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.body.addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const dy = e.changedTouches[0].clientY - swipeStartY;
+  // Горизонтальный свайп должен быть преобладающим
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0 && currentIndex < 3) go(currentIndex + 1);
+    if (dx > 0 && currentIndex > 0) go(currentIndex - 1);
   }
-});
+}, { passive: true });
 
 /* ===== START ===== */
 render();
