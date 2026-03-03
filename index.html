@@ -831,7 +831,7 @@ function addSp(pts,x,y,col){
 }
 
 function endMG(){
-  mgLoops.forEach(l=>{try{clearInterval(l);clearTimeout(l);}catch(e){}});
+  mgLoops.forEach(l=>{try{if(l&&l._isFn)l._fn();else{clearInterval(l);clearTimeout(l);}}catch(e){}});
   mgLoops=[];mgActive=false;
   const cfg=MG_CFG[mgId];
   const dpsB=bInc(mgBldId)||1;
@@ -852,7 +852,7 @@ function endMG(){
   document.getElementById('mg-end').classList.add('on');
 }
 function closeMG(){
-  mgLoops.forEach(l=>{try{clearInterval(l);clearTimeout(l);}catch(e){}});
+  mgLoops.forEach(l=>{try{if(l&&l._isFn)l._fn();else{clearInterval(l);clearTimeout(l);}}catch(e){}});
   mgLoops=[];mgActive=false;
   document.getElementById('mg-overlay').classList.remove('on');
   document.getElementById('mg-canvas-wrap').innerHTML='';
@@ -878,15 +878,41 @@ function makeHold(el,onP,onR){
 }
 
 // ══════════════════════════════════════════
-// 🐟 FISHING — upgraded timing game
+// 🐟 FISHING — GYROSCOPE tilt control
 // ══════════════════════════════════════════
 function initFishing(wrap){
   wrap.innerHTML=`
-  <div class="fish-wrap">
-    <div class="fish-inst">Держи стрелку 🔴 в <b style="color:#4ade80">зелёной зоне</b> · Нажимай ЗАБРОС для захвата!</div>
-    <div class="fish-gauge-wrap">
+  <div class="fish-wrap" style="gap:7px;">
+
+    <!-- HOW TO PLAY CARD -->
+    <div style="width:100%;max-width:340px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);border-radius:14px;padding:10px 13px;">
+      <div style="font-size:12px;font-weight:800;color:var(--cyan);margin-bottom:6px;">📖 КАК ИГРАТЬ</div>
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--text);line-height:1.5;">
+        <div>📱 <b>Наклоняй телефон</b> влево/вправо — стрелка двигается за наклоном</div>
+        <div>🟢 Поставь стрелку <b style="color:#4ade80;">в зелёную зону</b></div>
+        <div>🎣 Нажми <b>ЗАБРОС</b> — поймай рыбу!</div>
+        <div>🔥 Несколько уловов подряд = <b style="color:var(--gold);">комбо-бонус</b></div>
+      </div>
+    </div>
+
+    <!-- GYRO STATUS -->
+    <div id="fGyroStatus" style="width:100%;max-width:340px;text-align:center;font-size:11px;padding:5px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--brd);">
+      <span id="fGyroTxt">⏳ Запрашиваем гироскоп…</span>
+    </div>
+
+    <!-- TILT INDICATOR -->
+    <div style="width:100%;max-width:340px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);">
+      <span>◀ Лево</span>
+      <div style="flex:1;height:6px;background:rgba(255,255,255,.07);border-radius:3px;position:relative;overflow:hidden;">
+        <div id="fTiltBar" style="position:absolute;top:0;height:100%;width:4px;background:var(--pink);border-radius:2px;left:50%;transform:translateX(-50%);box-shadow:0 0 8px var(--pink);transition:left .05s linear;"></div>
+      </div>
+      <span>Право ▶</span>
+    </div>
+
+    <!-- GAUGE -->
+    <div class="fish-gauge-wrap" style="width:100%;max-width:340px;">
       <div class="fish-gauge-labels">
-        <span>← Позиция стрелки →</span>
+        <span>← Позиция крючка →</span>
         <span id="fCombo" style="color:var(--gold);font-weight:800;"></span>
       </div>
       <div class="fish-gauge" id="fGauge">
@@ -894,40 +920,133 @@ function initFishing(wrap){
         <div class="fish-arrow" id="fArrow"></div>
       </div>
     </div>
-    <div class="fish-sea" id="fSea">
+
+    <!-- SEA -->
+    <div class="fish-sea" id="fSea" style="width:100%;max-width:340px;">
       <div class="fish-sea-floor">〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰〰</div>
       <div class="fish-mob" id="fMob" style="left:20%;">🐟</div>
       <div class="fish-hook" id="fHook">🪝</div>
     </div>
+
     <div class="fish-msg" id="fMsg"></div>
     <button class="fish-btn" id="fBtn">🎣 ЗАБРОС</button>
   </div>`;
 
-  let pos=50,vel=1.8,combo=0,cooldown=false,pressing=false,zPos=35,zDir=1;
+  let pos=50, vel=0, combo=0, cooldown=false, zPos=35, zDir=1;
+  let gyroActive=false, tiltX=0;
   const FISH=['🐟','🐠','🐡','🦐','🦞','🐙'];
   let mobX=20;
 
+  // ── Gyroscope setup ──
+  function startGyro(){
+    if(typeof DeviceOrientationEvent === 'undefined'){
+      setGyroStatus('❌ Гироскоп недоступен — используй качание пальцем', false);
+      return;
+    }
+    // iOS 13+ requires permission
+    if(typeof DeviceOrientationEvent.requestPermission === 'function'){
+      setGyroStatus('👆 Нажми чтобы разрешить гироскоп', false);
+      const statusEl=document.getElementById('fGyroStatus');
+      if(statusEl){
+        statusEl.style.cursor='pointer';
+        statusEl.style.borderColor='rgba(34,211,238,.5)';
+        statusEl.onclick=()=>{
+          DeviceOrientationEvent.requestPermission().then(state=>{
+            if(state==='granted'){
+              attachGyro();
+            } else {
+              setGyroStatus('❌ Отказано — используй кнопки ниже', false);
+              showFallbackBtns();
+            }
+          }).catch(()=>{
+            setGyroStatus('❌ Ошибка — используй кнопки ниже', false);
+            showFallbackBtns();
+          });
+        };
+      }
+    } else {
+      attachGyro();
+    }
+  }
+
+  function attachGyro(){
+    let hasData=false;
+    const handler=e=>{
+      if(!mgActive){window.removeEventListener('deviceorientation',handler);return;}
+      // gamma = left/right tilt (-90 to 90)
+      const gamma=e.gamma||0;
+      tiltX=Math.max(-45,Math.min(45,gamma));
+      if(!hasData){
+        hasData=true;
+        setGyroStatus('✅ Гироскоп работает! Наклоняй телефон 📱', true);
+      }
+      // update tilt bar
+      const bar=document.getElementById('fTiltBar');
+      if(bar)bar.style.left=(50+tiltX/45*46)+'%';
+    };
+    window.addEventListener('deviceorientation',handler,{passive:true});
+    mgLoops.push({_isFn:true,_fn:()=>window.removeEventListener('deviceorientation',handler)});
+    gyroActive=true;
+    // If no data after 2s, show fallback
+    setTimeout(()=>{
+      if(!hasData&&mgActive){
+        setGyroStatus('⚠️ Гироскоп не ответил — используй кнопки', false);
+        showFallbackBtns();
+        gyroActive=false;
+      }
+    },2000);
+  }
+
+  function setGyroStatus(txt, ok){
+    const el=document.getElementById('fGyroTxt');
+    if(el){el.textContent=txt;el.style.color=ok?'var(--green)':'var(--dim)';}
+    const wrap2=document.getElementById('fGyroStatus');
+    if(wrap2)wrap2.style.borderColor=ok?'rgba(74,222,128,.35)':'rgba(255,255,255,.1)';
+  }
+
+  function showFallbackBtns(){
+    // inject left/right hold buttons above cast button
+    const existing=document.getElementById('fFallback');
+    if(existing)return;
+    const fb=document.createElement('div');
+    fb.id='fFallback';
+    fb.style.cssText='display:flex;gap:8px;width:100%;max-width:340px;';
+    fb.innerHTML=`
+      <button id="fBtnL" style="flex:1;height:52px;border-radius:14px;border:2px solid rgba(34,211,238,.3);background:rgba(34,211,238,.08);color:#fff;font-size:22px;cursor:pointer;touch-action:manipulation;">◀</button>
+      <button id="fBtnR" style="flex:1;height:52px;border-radius:14px;border:2px solid rgba(34,211,238,.3);background:rgba(34,211,238,.08);color:#fff;font-size:22px;cursor:pointer;touch-action:manipulation;">▶</button>`;
+    const castBtn=document.getElementById('fBtn');
+    if(castBtn&&castBtn.parentNode)castBtn.parentNode.insertBefore(fb,castBtn);
+    makeHold(document.getElementById('fBtnL'),()=>{tiltX=-30;},()=>{tiltX=0;});
+    makeHold(document.getElementById('fBtnR'),()=>{tiltX=30;},()=>{tiltX=0;});
+  }
+
+  // ── Physics loop — tilt drives velocity ──
   const al=setInterval(()=>{
     if(!mgActive){clearInterval(al);return;}
-    vel+=(Math.random()-.5)*(pressing?.18:.32);
-    vel=Math.max(-4,Math.min(4,vel));
-    if(pressing)vel*=.88;
+    // tilt → acceleration (gyro or fallback buttons)
+    const accel=tiltX/45*0.55;
+    vel+=accel;
+    // damping
+    vel*=0.92;
+    vel=Math.max(-5,Math.min(5,vel));
     pos+=vel;
-    if(pos>=97){pos=97;vel=-Math.abs(vel)*(.7+Math.random()*.3);}
-    if(pos<=3){pos=3;vel=Math.abs(vel)*(.7+Math.random()*.3);}
+    if(pos>=97){pos=97;vel=-Math.abs(vel)*.5;}
+    if(pos<=3){pos=3;vel=Math.abs(vel)*.5;}
     const a=document.getElementById('fArrow');if(a)a.style.left=pos+'%';
     if(Math.random()<.02){mobX=6+Math.random()*80;const m=document.getElementById('fMob');if(m){m.textContent=FISH[Math.floor(Math.random()*FISH.length)];m.style.left=mobX+'%';}}
   },38);
   mgLoops.push(al);
 
+  // ── Zone movement ──
   const zl=setInterval(()=>{
     if(!mgActive){clearInterval(zl);return;}
-    zPos+=zDir*.6+(Math.random()-.5)*.2;
+    zPos+=zDir*.55+(Math.random()-.5)*.2;
     if(zPos>62||zPos<5)zDir*=-1;
     const z=document.getElementById('fZone');if(z)z.style.left=zPos+'%';
   },50);
   mgLoops.push(zl);
 
+  // ── Cast ──
   function cast(){
     if(cooldown||!mgActive)return;
     cooldown=true;
@@ -962,9 +1081,11 @@ function initFishing(wrap){
     },700);
   }
 
-  const btn=document.getElementById('fBtn');
-  onTap(btn,cast);
-  makeHold(btn,()=>{pressing=true;},()=>{pressing=false;cast();});
+  onTap(document.getElementById('fBtn'),cast);
+  startGyro();
+
+  // patch closeMG to clean up orientation listener
+  const _origClose=closeMG;
 }
 
 // ══════════════════════════════════════════
