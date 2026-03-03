@@ -1,334 +1,378 @@
-/**
- * GACHA CATS - Multiplayer Backend
- * Node.js + Express + Socket.io
- *
- * Deploy: Railway / Render / VPS
- * npm install express socket.io cors
- * node server.js
- */
+// ═══════════════════════════════════════════════════════════════
+// CAT EMPIRE - TELEGRAM MINI APP BACKEND
+// ═══════════════════════════════════════════════════════════════
+// npm install express cors body-parser axios dotenv mongoose
 
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+const axios = require('axios');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
-
-// CORS — разрешаем все источники (GitHub Pages, Telegram WebApp)
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.use(express.json());
-
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    credentials: false,
-  },
-  // Важно для Railway: разрешаем polling как fallback
-  transports: ['polling', 'websocket'],
-  allowEIO3: true, // совместимость со старыми клиентами
-});
-
 const PORT = process.env.PORT || 3000;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cat-empire';
 
-/* ══════════════════════════════════════
-   IN-MEMORY STORE (replace with Redis/DB for prod)
-══════════════════════════════════════ */
-const players = new Map();       // uid -> playerData
-const leaderboard = [];          // sorted array
-const pvpQueue = [];             // waiting for match
-const activeMatches = new Map(); // matchId -> matchData
+// ═══════════════════════════════════════════════════════════════
+// MIDDLEWARE
+// ═══════════════════════════════════════════════════════════════
+app.use(cors());
+app.use(bodyParser.json({limit:'50mb'}));
+app.use(bodyParser.urlencoded({limit:'50mb',extended:true}));
 
-/* ══════════════════════════════════════
-   HELPERS
-══════════════════════════════════════ */
-function getLeaderboard() {
-  const arr = Array.from(players.values())
-    .filter(p => !p.uid.startsWith('bot_') && !p.uid.startsWith('local_'))  // only real players
-    .sort((a, b) => b.pvpScore - a.pvpScore)
-    .slice(0, 100)
-    .map((p, i) => ({
-      rank: i + 1,
-      uid: p.uid,
-      name: p.name,
-      emoji: p.topCatEmoji || '😺',
-      avatar: p.avatar || p.topCatEmoji || '😺',
-      pvpScore: p.pvpScore || 0,
-      pvpWins: p.pvpWins || 0,
-      pvpLosses: p.pvpLosses || 0,
-      topRarity: p.topRarity || 'Common',
-      level: p.maxLevel || 1,
-      lastSeen: p.lastSeen || 0,
+// ═══════════════════════════════════════════════════════════════
+// DATABASE SCHEMA
+// ═══════════════════════════════════════════════════════════════
+const gameStateSchema = new mongoose.Schema({
+  userId: {type:Number, required:true, unique:true},
+  username: String,
+  firstName: String,
+  lastName: String,
+  isPremium: Boolean,
+  
+  // Game progress
+  coins: {type:Number, default:150},
+  gems: {type:Number, default:50},
+  level: {type:Number, default:1},
+  xp: {type:Number, default:0},
+  totalEarned: {type:Number, default:0},
+  
+  // Buildings progress
+  buildings: {
+    fish: {lvl:Number, mgr:Boolean},
+    cafe: {lvl:Number, mgr:Boolean},
+    neon: {lvl:Number, mgr:Boolean},
+    gym: {lvl:Number, mgr:Boolean},
+    mem: {lvl:Number, mgr:Boolean},
+    arena: {lvl:Number, mgr:Boolean},
+    verse: {lvl:Number, mgr:Boolean},
+    bank: {lvl:Number, mgr:Boolean},
+  },
+  
+  // Customization
+  customizations: {
+    avatar: {type:String, default:'😸'},
+    skin: {type:String, default:'default'},
+    badge: String,
+  },
+  
+  // Event progress
+  completedQuests: [String],
+  eventProgress: {
+    currentEventId: String,
+    questsProgress: mongoose.Schema.Types.Mixed,
+  },
+  
+  // Meta
+  createdAt: {type:Date, default:Date.now},
+  updatedAt: {type:Date, default:Date.now},
+  lastOnline: {type:Date, default:Date.now},
+});
+
+const GameState = mongoose.model('GameState', gameStateSchema);
+
+// ═══════════════════════════════════════════════════════════════
+// TELEGRAM VERIFICATION
+// ═══════════════════════════════════════════════════════════════
+async function verifyTelegramData(initData){
+  try{
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    params.delete('hash');
+    
+    const dataCheckString = Array.from(params.entries())
+      .sort(([a],[b])=>a.localeCompare(b))
+      .map(([k,v])=>`${k}=${v}`)
+      .join('\n');
+    
+    const crypto = require('crypto');
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_BOT_TOKEN).digest();
+    const checkHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+    
+    return checkHash === hash;
+  }catch(e){
+    console.error('Telegram verification error:', e);
+    return false;
+  }
+}
+
+function parseTelegramData(initData){
+  const params = new URLSearchParams(initData);
+  const user = JSON.parse(params.get('user')||'{}');
+  return {userId:user.id, username:user.username, ...user};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// API ENDPOINTS
+// ═══════════════════════════════════════════════════════════════
+
+// SYNC - Save player progress
+app.post('/api/sync', async(req,res)=>{
+  try{
+    const {initData, gameState, buildings, customizations, completedQuests} = req.body;
+    
+    // Verify Telegram data
+    const isValid = await verifyTelegramData(initData);
+    if(!isValid){
+      return res.status(401).json({error:'Invalid telegram data'});
+    }
+    
+    const tgData = parseTelegramData(initData);
+    const userId = tgData.userId;
+    
+    // Update or create game state
+    const state = await GameState.findOneAndUpdate(
+      {userId},
+      {
+        username: tgData.username,
+        firstName: tgData.first_name,
+        lastName: tgData.last_name,
+        isPremium: tgData.is_premium,
+        coins: gameState.coins,
+        gems: gameState.gems,
+        level: gameState.level,
+        xp: gameState.xp,
+        buildings,
+        customizations,
+        completedQuests,
+        lastOnline: new Date(),
+        updatedAt: new Date(),
+      },
+      {upsert:true, new:true}
+    );
+    
+    console.log(`✓ Synced ${tgData.username} (ID: ${userId})`);
+    res.json({success:true, userId, data:state});
+    
+  }catch(err){
+    console.error('Sync error:', err);
+    res.status(500).json({error:err.message});
+  }
+});
+
+// LOAD - Get player progress
+app.post('/api/load', async(req,res)=>{
+  try{
+    const {initData} = req.body;
+    
+    const isValid = await verifyTelegramData(initData);
+    if(!isValid){
+      return res.status(401).json({error:'Invalid telegram data'});
+    }
+    
+    const tgData = parseTelegramData(initData);
+    const userId = tgData.userId;
+    
+    let state = await GameState.findOne({userId});
+    
+    if(!state){
+      // Create new player
+      state = new GameState({
+        userId,
+        username: tgData.username,
+        firstName: tgData.first_name,
+        lastName: tgData.last_name,
+        isPremium: tgData.is_premium,
+        buildings: {
+          fish:{lvl:1,mgr:false},
+          cafe:{lvl:1,mgr:false},
+          neon:{lvl:0,mgr:false},
+          gym:{lvl:0,mgr:false},
+          mem:{lvl:0,mgr:false},
+          arena:{lvl:0,mgr:false},
+          verse:{lvl:0,mgr:false},
+          bank:{lvl:0,mgr:false},
+        }
+      });
+      await state.save();
+      console.log(`→ Created new player: ${tgData.username} (ID: ${userId})`);
+    }
+    
+    const gameState = {
+      userId: state.userId,
+      username: state.username,
+      coins: state.coins,
+      gems: state.gems,
+      level: state.level,
+      xp: state.xp,
+      customizations: state.customizations,
+    };
+    
+    res.json({
+      success:true,
+      gameState,
+      buildings:state.buildings,
+      customizations:state.customizations,
+      completedQuests:state.completedQuests,
+    });
+    
+  }catch(err){
+    console.error('Load error:', err);
+    res.status(500).json({error:err.message});
+  }
+});
+
+// GET LEADERBOARD
+app.get('/api/leaderboard', async(req,res)=>{
+  try{
+    const limit = parseInt(req.query.limit) || 50;
+    
+    const leaders = await GameState.find()
+      .sort({level:-1, totalEarned:-1})
+      .limit(limit)
+      .select('userId username level coins gems totalEarned');
+    
+    const formatted = leaders.map((p,i)=>({
+      rank: i+1,
+      userId: p.userId,
+      username: p.username,
+      level: p.level,
+      coins: p.coins,
+      totalEarned: p.totalEarned,
     }));
-  return arr;
-}
+    
+    res.json({success:true, data:formatted});
+    
+  }catch(err){
+    console.error('Leaderboard error:', err);
+    res.status(500).json({error:err.message});
+  }
+});
 
-function broadcastLeaderboard() {
-  io.emit('leaderboard_update', getLeaderboard());
-}
+// GET PLAYER STATS
+app.post('/api/stats', async(req,res)=>{
+  try{
+    const {initData} = req.body;
+    const isValid = await verifyTelegramData(initData);
+    if(!isValid) return res.status(401).json({error:'Invalid telegram data'});
+    
+    const tgData = parseTelegramData(initData);
+    const state = await GameState.findOne({userId:tgData.userId});
+    
+    if(!state) return res.status(404).json({error:'Player not found'});
+    
+    const stats = {
+      level: state.level,
+      coins: state.coins,
+      gems: state.gems,
+      totalEarned: state.totalEarned,
+      buildingsCount: Object.values(state.buildings).filter(b=>b.lvl>0).length,
+      completedQuests: state.completedQuests.length,
+      lastOnline: state.lastOnline,
+      createdAt: state.createdAt,
+    };
+    
+    res.json({success:true, stats});
+    
+  }catch(err){
+    res.status(500).json({error:err.message});
+  }
+});
 
-function simulateBattle(fighter1, fighter2) {
-  // Deterministic battle simulation
-  let hp1 = fighter1.power * 3 + 50;
-  let hp2 = fighter2.power * 3 + 50;
-  const log = [];
-  let round = 0;
+// CLAIM EVENT REWARD
+app.post('/api/claim-reward', async(req,res)=>{
+  try{
+    const {initData, rewardId} = req.body;
+    const isValid = await verifyTelegramData(initData);
+    if(!isValid) return res.status(401).json({error:'Invalid telegram data'});
+    
+    const tgData = parseTelegramData(initData);
+    const state = await GameState.findOne({userId:tgData.userId});
+    
+    if(!state) return res.status(404).json({error:'Player not found'});
+    
+    // Add reward logic here
+    state.gems += 50; // Example reward
+    state.updatedAt = new Date();
+    await state.save();
+    
+    res.json({success:true, message:'Reward claimed'});
+    
+  }catch(err){
+    res.status(500).json({error:err.message});
+  }
+});
 
-  while (hp1 > 0 && hp2 > 0 && round < 30) {
-    round++;
-    const crit1 = Math.random() < 0.12;
-    const crit2 = Math.random() < 0.12;
-    const dmg1 = Math.floor(fighter1.power * (0.6 + Math.random() * 0.8) * (crit1 ? 1.8 : 1));
-    const dmg2 = Math.floor(fighter2.power * (0.6 + Math.random() * 0.8) * (crit2 ? 1.8 : 1));
-    hp2 -= dmg1;
-    hp1 -= dmg2;
-    if (round <= 5) {
-      log.push({
-        round,
-        atk1: dmg1, crit1,
-        atk2: dmg2, crit2,
-        hp1: Math.max(0, hp1),
-        hp2: Math.max(0, hp2),
-      });
+// ═══════════════════════════════════════════════════════════════
+// ADMIN ENDPOINTS
+// ═══════════════════════════════════════════════════════════════
+
+// Get all players
+app.get('/admin/players', async(req,res)=>{
+  try{
+    const adminKey = req.headers['x-admin-key'];
+    if(adminKey !== process.env.ADMIN_KEY){
+      return res.status(401).json({error:'Unauthorized'});
     }
+    
+    const players = await GameState.find().limit(100);
+    res.json({success:true, count:players.length, data:players});
+    
+  }catch(err){
+    res.status(500).json({error:err.message});
   }
-
-  return {
-    winner: hp1 > 0 ? fighter1.uid : fighter2.uid,
-    log,
-    hp1Final: Math.max(0, hp1),
-    hp2Final: Math.max(0, hp2),
-    rounds: round,
-  };
-}
-
-/* ══════════════════════════════════════
-   HEALTH CHECK — Railway проверяет этот URL
-   Также не даёт серверу "засыпать"
-══════════════════════════════════════ */
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', game: 'Gacha Cats', players: players.size, uptime: Math.floor(process.uptime()) });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: Date.now() });
-});
-
-/* ══════════════════════════════════════
-   REST API
-══════════════════════════════════════ */
-
-// Save player state (called on app load & periodically)
-// Also stores full game state for cross-device sync
-app.post('/api/player/sync', (req, res) => {
-  const { uid, name, data, fullState } = req.body;
-  if (!uid) return res.status(400).json({ error: 'uid required' });
-
-  const existing = players.get(uid) || {};
-  players.set(uid, {
-    ...existing,
-    uid,
-    name: name || existing.name || 'Игрок',
-    pvpScore: data?.pvpScore ?? existing.pvpScore ?? 0,
-    pvpWins: data?.pvpWins ?? existing.pvpWins ?? 0,
-    pvpLosses: data?.pvpLosses ?? existing.pvpLosses ?? 0,
-    topCatEmoji: data?.topCatEmoji ?? existing.topCatEmoji ?? '😺',
-    avatar: data?.avatar ?? existing.avatar ?? '😺',
-    topRarity: data?.topRarity ?? existing.topRarity ?? 'Common',
-    maxLevel: data?.maxLevel ?? existing.maxLevel ?? 1,
-    maxPower: data?.maxPower ?? existing.maxPower ?? 10,
-    lastSeen: data?.lastSeen || Date.now(),
-    // Store full game state for cross-device sync (only if provided and newer)
-    fullState: fullState || existing.fullState || null,
-    fullStateAt: fullState ? Date.now() : (existing.fullStateAt || 0),
-  });
-
-  broadcastLeaderboard();
-  res.json({ ok: true, rank: getLeaderboard().findIndex(p => p.uid === uid) + 1 });
-});
-
-// Full state save — called when user wants to sync cross-device
-app.post('/api/player/save', (req, res) => {
-  const { uid, name, state } = req.body;
-  if (!uid || !state) return res.status(400).json({ error: 'uid and state required' });
-
-  const existing = players.get(uid) || {};
-  players.set(uid, {
-    ...existing,
-    uid,
-    name: name || existing.name || 'Игрок',
-    fullState: state,
-    fullStateAt: Date.now(),
-    lastSeen: Date.now(),
-  });
-
-  res.json({ ok: true, savedAt: Date.now() });
-});
-
-// Full state load — called on app boot to restore cross-device progress
-app.get('/api/player/:uid/load', (req, res) => {
-  const player = players.get(req.params.uid);
-  if (!player || !player.fullState) {
-    return res.json({ ok: false, state: null, savedAt: null });
-  }
-  res.json({ ok: true, state: player.fullState, savedAt: player.fullStateAt });
-});
-
-// Get leaderboard
-app.get('/api/leaderboard', (req, res) => {
-  res.json(getLeaderboard());
-});
-
-// Get player rank
-app.get('/api/player/:uid/rank', (req, res) => {
-  const lb = getLeaderboard();
-  const idx = lb.findIndex(p => p.uid === req.params.uid);
-  const player = players.get(req.params.uid);
-  res.json({
-    rank: idx + 1 || lb.length + 1,
-    total: players.size,
-    player: player || null,
-  });
-});
-
-/* ══════════════════════════════════════
-   SOCKET.IO - REALTIME PvP
-══════════════════════════════════════ */
-io.on('connection', (socket) => {
-  console.log('connected:', socket.id);
-
-  socket.on('player_join', ({ uid, name }) => {
-    socket.uid = uid;
-    socket.playerName = name;
-    socket.join(`player:${uid}`);
-    socket.emit('leaderboard_update', getLeaderboard());
-  });
-
-  // Join PvP matchmaking queue
-  socket.on('pvp_queue_join', ({ uid, fighter }) => {
-    // Remove if already in queue
-    const existIdx = pvpQueue.findIndex(q => q.uid === uid);
-    if (existIdx !== -1) pvpQueue.splice(existIdx, 1);
-
-    pvpQueue.push({ socketId: socket.id, uid, fighter, joinedAt: Date.now() });
-    socket.emit('pvp_queue_status', { status: 'searching', queueSize: pvpQueue.length });
-
-    // Try to match
-    tryMatch();
-  });
-
-  // Leave queue
-  socket.on('pvp_queue_leave', ({ uid }) => {
-    const idx = pvpQueue.findIndex(q => q.uid === uid);
-    if (idx !== -1) pvpQueue.splice(idx, 1);
-    socket.emit('pvp_queue_status', { status: 'idle' });
-  });
-
-  // Battle result acknowledged
-  socket.on('battle_ack', ({ matchId }) => {
-    // Clean up match after both ack
-    const match = activeMatches.get(matchId);
-    if (match) {
-      match.acks = (match.acks || 0) + 1;
-      if (match.acks >= 2) activeMatches.delete(matchId);
+// Get player by ID
+app.get('/admin/player/:userId', async(req,res)=>{
+  try{
+    const adminKey = req.headers['x-admin-key'];
+    if(adminKey !== process.env.ADMIN_KEY){
+      return res.status(401).json({error:'Unauthorized'});
     }
-  });
-
-  socket.on('disconnect', () => {
-    const idx = pvpQueue.findIndex(q => q.socketId === socket.id);
-    if (idx !== -1) pvpQueue.splice(idx, 1);
-  });
+    
+    const player = await GameState.findOne({userId:parseInt(req.params.userId)});
+    if(!player) return res.status(404).json({error:'Player not found'});
+    
+    res.json({success:true, data:player});
+    
+  }catch(err){
+    res.status(500).json({error:err.message});
+  }
 });
 
-function tryMatch() {
-  if (pvpQueue.length < 2) {
-    // No bots — just keep waiting for a real player
-    // Emit waiting status update every 10s so client knows queue is still alive
-    pvpQueue.forEach(q => {
-      const waiting = Math.floor((Date.now() - q.joinedAt) / 1000);
-      io.to(q.socketId).emit('pvp_queue_status', {
-        status: 'searching',
-        queueSize: pvpQueue.length,
-        waitSeconds: waiting,
-      });
-    });
-    return;
-  }
-
-  // Sort by power for fair matching
-  pvpQueue.sort((a, b) => (a.fighter.power || 0) - (b.fighter.power || 0));
-
-  const p1 = pvpQueue.shift();
-  const p2 = pvpQueue.shift();
-
-  const result = simulateBattle(
-    { ...p1.fighter, uid: p1.uid },
-    { ...p2.fighter, uid: p2.uid }
-  );
-
-  const matchId = Date.now().toString(36) + Math.random().toString(36).slice(2);
-  activeMatches.set(matchId, { p1, p2, result, acks: 0 });
-
-  const basePayload = { matchId, result };
-
-  // Send to both players
-  io.to(p1.socketId).emit('pvp_battle_result', {
-    ...basePayload,
-    you: { uid: p1.uid, fighter: p1.fighter, name: p1.name || 'Игрок 1' },
-    opponent: { uid: p2.uid, fighter: p2.fighter, name: p2.name || 'Игрок 2' },
-  });
-  io.to(p2.socketId).emit('pvp_battle_result', {
-    ...basePayload,
-    you: { uid: p2.uid, fighter: p2.fighter, name: p2.name || 'Игрок 2' },
-    opponent: { uid: p1.uid, fighter: p1.fighter, name: p1.name || 'Игрок 1' },
-  });
-
-  // Update scores
-  const updateScore = (uid, won) => {
-    const p = players.get(uid);
-    if (p) {
-      if (won) { p.pvpScore += 15 + Math.floor(Math.random() * 10); p.pvpWins = (p.pvpWins || 0) + 1; }
-      else { p.pvpScore = Math.max(0, (p.pvpScore || 0) - 5); p.pvpLosses = (p.pvpLosses || 0) + 1; }
-      players.set(uid, p);
+// Reset player progress
+app.post('/admin/reset/:userId', async(req,res)=>{
+  try{
+    const adminKey = req.headers['x-admin-key'];
+    if(adminKey !== process.env.ADMIN_KEY){
+      return res.status(401).json({error:'Unauthorized'});
     }
-  };
-
-  updateScore(result.winner, true);
-  updateScore(result.winner === p1.uid ? p2.uid : p1.uid, false);
-
-  setTimeout(broadcastLeaderboard, 500);
-
-  // Try again if more players waiting
-  if (pvpQueue.length >= 2) setTimeout(tryMatch, 100);
-}
-
-// Broadcast queue size updates every 5s so waiting players see live count
-setInterval(() => {
-  if (pvpQueue.length > 0) {
-    pvpQueue.forEach(q => {
-      const waiting = Math.floor((Date.now() - q.joinedAt) / 1000);
-      io.to(q.socketId).emit('pvp_queue_status', {
-        status: 'searching',
-        queueSize: pvpQueue.length,
-        waitSeconds: waiting,
-      });
-    });
+    
+    const userId = parseInt(req.params.userId);
+    const result = await GameState.findOneAndDelete({userId});
+    
+    res.json({success:true, message:`Player ${userId} reset`});
+    
+  }catch(err){
+    res.status(500).json({error:err.message});
   }
-}, 5000);
+});
 
-// Also try to match any newcomers on interval
-setInterval(() => {
-  if (pvpQueue.length >= 2) tryMatch();
-}, 2000);
+// ═══════════════════════════════════════════════════════════════
+// DATABASE CONNECTION & SERVER START
+// ═══════════════════════════════════════════════════════════════
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser:true,
+  useUnifiedTopology:true
+})
+.then(()=>{
+  console.log('✓ MongoDB connected');
+  app.listen(PORT, ()=>{
+    console.log(`✓ Server running on port ${PORT}`);
+    console.log(`✓ Telegram token: ${TELEGRAM_BOT_TOKEN?'✓':'✗'}`);
+  });
+})
+.catch(err=>{
+  console.error('MongoDB connection error:', err);
+  process.exit(1);
+});
 
-// Broadcast leaderboard every 30s
-setInterval(broadcastLeaderboard, 30000);
-
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🐱 Gacha Cats server running on port ${PORT}`);
+// Graceful shutdown
+process.on('SIGTERM', async()=>{
+  console.log('Shutting down gracefully...');
+  await mongoose.connection.close();
+  process.exit(0);
 });
