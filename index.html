@@ -2,205 +2,1637 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Cat Survival RPG</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>DEADZONE: Tile Survival</title>
 <style>
-body{
-  margin:0;
-  background:#0f131a;
-  color:#fff;
-  font-family:system-ui,Arial;
-}
-#map{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:4px;
-  padding:10px;
-}
-.tile{
-  aspect-ratio:1;
-  border-radius:10px;
-  background:#1b2230;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.tile.hidden{background:#080b10}
-.tile.base{background:#2e8b57}
-.tile.wood{background:#5c3b1e}
-.tile.enemy{background:#4b1e1e}
-#ui{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#0b0e14;
-  padding:10px;
-}
-button{
-  width:100%;
-  padding:12px;
-  margin-top:6px;
-  border:none;
-  border-radius:14px;
-  background:#4e7cff;
-  color:white;
-  font-weight:600;
-}
-.card{
-  background:#1b2230;
-  border-radius:14px;
-  padding:10px;
-  margin-top:8px;
-}
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --bg2: #0f1218;
+    --bg3: #141820;
+    --panel: #161c26;
+    --panel2: #1e2738;
+    --border: #2a3548;
+    --border2: #354a6a;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --accent4: #ffd700;
+    --danger: #ff3b3b;
+    --text: #e8edf5;
+    --text2: #8fa0be;
+    --text3: #4a5f7a;
+    --rare: #b44aff;
+    --epic: #ff6b35;
+    --legendary: #ffd700;
+    --common: #8fa0be;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  
+  html, body {
+    width:100%; height:100%; overflow:hidden;
+    background: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text);
+    touch-action: none;
+  }
+
+  #app {
+    width:100%; height:100%;
+    display:flex; flex-direction:column;
+    position:relative; overflow:hidden;
+  }
+
+  /* ===== TOP HUD ===== */
+  #hud-top {
+    position:absolute; top:0; left:0; right:0; z-index:100;
+    background: linear-gradient(180deg, rgba(10,12,16,0.98) 0%, rgba(10,12,16,0.85) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: env(safe-area-inset-top, 8px) 12px 8px;
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .hud-res {
+    display:flex; align-items:center; gap:5px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius:8px; padding:4px 8px; flex:1;
+    font-size:12px; font-weight:600;
+  }
+  .hud-res .icon { font-size:14px; }
+  .hud-res .val { color: var(--text); }
+  .hud-res .lbl { color: var(--text3); font-size:10px; }
+
+  #player-level {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #000; border-radius:8px; padding:4px 10px;
+    font-family:'Orbitron',sans-serif; font-size:11px; font-weight:900;
+    white-space:nowrap;
+  }
+
+  /* ===== BOTTOM HUD ===== */
+  #hud-bottom {
+    position:absolute; bottom:0; left:0; right:0; z-index:100;
+    background: linear-gradient(0deg, rgba(10,12,16,0.98) 0%, rgba(10,12,16,0.85) 100%);
+    border-top: 1px solid var(--border);
+    padding: 8px 12px env(safe-area-inset-bottom, 8px);
+    display:flex; align-items:center; gap:8px;
+  }
+
+  .hud-btn {
+    flex:1; background: var(--panel); border: 1px solid var(--border);
+    border-radius:10px; padding:8px 4px; text-align:center;
+    cursor:pointer; transition: all 0.15s;
+    font-size:18px; line-height:1;
+  }
+  .hud-btn .btn-lbl { font-size:9px; color:var(--text2); display:block; margin-top:2px; font-weight:600; }
+  .hud-btn:active, .hud-btn.active {
+    background: var(--panel2); border-color: var(--accent);
+    box-shadow: 0 0 12px rgba(0,212,255,0.2);
+  }
+  .hud-btn.active { border-color: var(--accent2); }
+
+  /* ===== CANVAS ===== */
+  #game-canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+  }
+
+  /* ===== NOTIFICATION ===== */
+  #notif {
+    position:absolute; top:70px; left:50%; transform:translateX(-50%);
+    z-index:200; pointer-events:none;
+    display:flex; flex-direction:column; gap:6px; align-items:center; width:90%;
+  }
+
+  .notif-item {
+    background: var(--panel2); border: 1px solid var(--border2);
+    border-radius:10px; padding:8px 16px;
+    font-size:13px; font-weight:600; text-align:center;
+    animation: notifSlide 0.3s ease, notifFade 0.4s ease 2s forwards;
+    max-width:320px;
+  }
+  .notif-item.reward { border-color: var(--accent4); color: var(--accent4); }
+  .notif-item.danger { border-color: var(--danger); color: var(--danger); }
+  .notif-item.rare { border-color: var(--rare); color: var(--rare); }
+  .notif-item.success { border-color: var(--accent2); color: var(--accent2); }
+
+  @keyframes notifSlide {
+    from { opacity:0; transform:translateY(-10px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  @keyframes notifFade {
+    to { opacity:0; transform:translateY(-10px); }
+  }
+
+  /* ===== PANELS ===== */
+  .panel-overlay {
+    position:absolute; inset:0; z-index:150;
+    background: rgba(5,7,12,0.92);
+    display:flex; align-items:flex-end;
+    animation: panelIn 0.25s ease;
+  }
+  @keyframes panelIn {
+    from { opacity:0; }
+    to { opacity:1; }
+  }
+
+  .panel-sheet {
+    width:100%; background: var(--panel);
+    border-top: 2px solid var(--border2);
+    border-radius:20px 20px 0 0;
+    padding: 16px 16px env(safe-area-inset-bottom, 16px);
+    max-height: 75vh; overflow-y:auto;
+    animation: sheetUp 0.25s ease;
+  }
+  @keyframes sheetUp {
+    from { transform:translateY(30px); opacity:0; }
+    to { transform:translateY(0); opacity:1; }
+  }
+
+  .panel-title {
+    font-family:'Orbitron',sans-serif; font-size:16px; font-weight:700;
+    color: var(--accent); margin-bottom:16px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-close {
+    background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+    padding:4px 10px; font-size:12px; color:var(--text2); cursor:pointer;
+    font-family:'Rajdhani',sans-serif;
+  }
+
+  /* Survivors Panel */
+  .survivor-grid { display:flex; flex-direction:column; gap:8px; }
+  .survivor-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius:12px; padding:12px; display:flex; gap:12px;
+    align-items:center; cursor:pointer; transition:all 0.15s;
+    position:relative; overflow:hidden;
+  }
+  .survivor-card::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  }
+  .survivor-card.common::before { background: var(--common); }
+  .survivor-card.rare::before { background: var(--rare); }
+  .survivor-card.epic::before { background: var(--epic); }
+  .survivor-card.legendary::before { background: var(--legendary); }
+  .survivor-card:active { border-color: var(--accent); background: var(--panel2); }
+  .survivor-card.assigned { opacity:0.6; }
+  .survivor-card.busy { background: linear-gradient(135deg, var(--bg3), rgba(255,107,53,0.05)); }
+
+  .surv-avatar {
+    width:44px; height:44px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px; flex-shrink:0;
+    background: var(--panel2);
+  }
+  .surv-info { flex:1; min-width:0; }
+  .surv-name { font-weight:700; font-size:14px; }
+  .surv-rarity { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  .surv-rarity.common { color:var(--common); }
+  .surv-rarity.rare { color:var(--rare); }
+  .surv-rarity.epic { color:var(--epic); }
+  .surv-rarity.legendary { color:var(--legendary); }
+  .surv-stats { display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; }
+  .surv-stat { font-size:11px; color:var(--text2); }
+  .surv-stat span { color:var(--text); font-weight:600; }
+
+  .surv-level {
+    background: var(--accent); color:#000; border-radius:6px;
+    padding:2px 8px; font-size:11px; font-weight:700;
+    font-family:'Orbitron',sans-serif;
+  }
+
+  .surv-bar-wrap { margin-top:6px; }
+  .surv-bar-bg { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .surv-bar-fill { height:100%; border-radius:2px; transition:width 0.3s; }
+  .surv-bar-fill.hp { background:var(--accent2); }
+  .surv-bar-fill.xp { background:var(--accent); }
+
+  .surv-action {
+    font-size:10px; color:var(--accent3); font-weight:600;
+    white-space:nowrap; text-align:right;
+  }
+
+  /* Base Panel */
+  .building-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .building-card {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; padding:12px; cursor:pointer; transition:all 0.15s;
+    text-align:center;
+  }
+  .building-card:active { border-color:var(--accent2); }
+  .building-card.upgrading { border-color:var(--accent); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+  .bld-icon { font-size:28px; margin-bottom:6px; }
+  .bld-name { font-size:12px; font-weight:700; }
+  .bld-level {
+    font-family:'Orbitron',sans-serif; font-size:10px;
+    color:var(--accent); margin-top:2px;
+  }
+  .bld-btn {
+    margin-top:8px; width:100%; padding:5px;
+    background:var(--panel2); border:1px solid var(--border2);
+    border-radius:8px; font-size:11px; color:var(--text2);
+    cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600;
+    transition:all 0.15s;
+  }
+  .bld-btn:active, .bld-btn.can-upgrade { background:var(--accent2); color:#000; border-color:var(--accent2); }
+
+  /* Shop Panel */
+  .shop-tabs { display:flex; gap:6px; margin-bottom:12px; }
+  .shop-tab {
+    flex:1; padding:6px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; text-align:center; font-size:12px; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .shop-tab.active { border-color:var(--accent4); color:var(--accent4); }
+  .shop-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .shop-item {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; padding:12px; text-align:center; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .shop-item:active { border-color:var(--accent4); }
+  .shop-item.featured { border-color:var(--accent4); background: linear-gradient(135deg, var(--bg3), rgba(255,215,0,0.05)); }
+  .shop-icon { font-size:32px; margin-bottom:6px; }
+  .shop-name { font-size:12px; font-weight:700; margin-bottom:4px; }
+  .shop-price {
+    display:inline-flex; align-items:center; gap:4px;
+    background:var(--panel2); border-radius:6px;
+    padding:3px 8px; font-size:12px; font-weight:700;
+    color:var(--accent4);
+  }
+  .shop-badge {
+    font-size:9px; background:var(--danger); color:#fff;
+    border-radius:4px; padding:1px 5px; margin-bottom:4px;
+    display:inline-block; font-weight:700;
+  }
+
+  /* Tile Info Panel */
+  #tile-panel {
+    position:absolute; z-index:120;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+    left:12px; right:12px;
+    background: var(--panel); border: 1px solid var(--border2);
+    border-radius:16px; padding:14px;
+    animation: sheetUp 0.2s ease;
+    display:none;
+  }
+  .tile-panel-row { display:flex; align-items:center; gap:12px; }
+  .tile-panel-icon { font-size:36px; }
+  .tile-panel-info { flex:1; }
+  .tile-panel-name { font-size:16px; font-weight:700; }
+  .tile-panel-type { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+  .tile-loot-preview { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .loot-chip {
+    background:var(--bg3); border:1px solid var(--border);
+    border-radius:6px; padding:3px 8px; font-size:11px;
+    display:flex; align-items:center; gap:4px;
+  }
+  .tile-actions { display:flex; gap:8px; margin-top:12px; }
+  .tile-act-btn {
+    flex:1; padding:10px; border-radius:10px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    border: none; transition:all 0.15s;
+    font-family:'Rajdhani',sans-serif;
+  }
+  .tile-act-btn.primary { background:var(--accent); color:#000; }
+  .tile-act-btn.secondary { background:var(--panel2); border:1px solid var(--border2); color:var(--text); }
+  .tile-act-btn:active { transform:scale(0.97); }
+  .tile-act-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* Battle result */
+  #battle-overlay {
+    position:absolute; inset:0; z-index:300;
+    background: rgba(0,0,0,0.85);
+    display:none; align-items:center; justify-content:center;
+    flex-direction:column; gap:16px;
+  }
+  .battle-box {
+    background:var(--panel); border: 2px solid var(--border2);
+    border-radius:20px; padding:24px; width:88%; max-width:340px;
+    text-align:center;
+  }
+  .battle-title { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; margin-bottom:8px; }
+  .battle-title.win { color:var(--accent2); }
+  .battle-title.lose { color:var(--danger); }
+  .battle-vs { font-size:32px; margin:12px 0; }
+  .battle-reward { margin-top:12px; }
+  .battle-reward-item { font-size:14px; margin:4px 0; }
+  .battle-close {
+    margin-top:16px; padding:12px 32px;
+    background:var(--accent); color:#000; border:none; border-radius:10px;
+    font-size:15px; font-weight:700; cursor:pointer;
+    font-family:'Rajdhani',sans-serif;
+  }
+
+  /* Progress bar */
+  #mine-progress {
+    position:absolute; z-index:120;
+    pointer-events:none;
+    display:none;
+  }
+  .mine-bar-outer {
+    width:60px; height:6px; background:rgba(0,0,0,0.7);
+    border-radius:3px; overflow:hidden;
+    border:1px solid rgba(255,255,255,0.2);
+  }
+  .mine-bar-inner {
+    height:100%; background:var(--accent2);
+    border-radius:3px; transition:width 0.1s linear;
+  }
+
+  /* Energy bar */
+  #energy-bar {
+    display:flex; align-items:center; gap:4px;
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:8px; padding:4px 8px;
+  }
+  #energy-fill { font-size:11px; font-weight:700; color:var(--accent3); }
+
+  /* Battle pass bar */
+  #bp-bar {
+    position:absolute; top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    z-index:50; transform-origin:left;
+  }
+
+  /* Achievements toast */
+  #achievement-toast {
+    position:absolute; top:70px; right:12px; z-index:250;
+    background: linear-gradient(135deg, #1a1030, #0d1020);
+    border: 1px solid var(--rare); border-radius:12px;
+    padding:10px 14px; min-width:200px;
+    display:none; animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn {
+    from { transform:translateX(30px); opacity:0; }
+    to { transform:translateX(0); opacity:1; }
+  }
+  .ach-title { font-size:10px; color:var(--rare); font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+  .ach-name { font-size:13px; font-weight:700; margin-top:2px; }
+  .ach-desc { font-size:11px; color:var(--text2); margin-top:2px; }
+
+  /* Splash screen */
+  #splash {
+    position:absolute; inset:0; z-index:999;
+    background: var(--bg);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:16px;
+  }
+  .splash-logo {
+    font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900;
+    text-align:center; line-height:1.2;
+  }
+  .splash-logo span { color:var(--accent); display:block; font-size:40px; }
+  .splash-sub { color:var(--text2); font-size:13px; text-align:center; max-width:260px; }
+  .splash-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#000; border:none; border-radius:14px;
+    padding:14px 48px; font-size:16px; font-weight:700;
+    cursor:pointer; font-family:'Orbitron',sans-serif;
+    box-shadow: 0 4px 24px rgba(0,212,255,0.4);
+    animation: btnPulse 2s infinite;
+    margin-top:8px;
+  }
+  @keyframes btnPulse {
+    0%,100%{box-shadow:0 4px 24px rgba(0,212,255,0.4)}
+    50%{box-shadow:0 4px 36px rgba(0,212,255,0.7)}
+  }
+  .splash-grid {
+    position:absolute; inset:0; opacity:0.04;
+    background-image: linear-gradient(var(--accent) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .splash-loading {
+    font-size:12px; color:var(--text3);
+    display:flex; align-items:center; gap:8px;
+  }
+  .loading-dots span {
+    display:inline-block; width:4px; height:4px;
+    background:var(--accent); border-radius:50%;
+    animation: dotBounce 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2){animation-delay:0.2s}
+  .loading-dots span:nth-child(3){animation-delay:0.4s}
+  @keyframes dotBounce {
+    0%,60%,100%{transform:translateY(0)}
+    30%{transform:translateY(-6px)}
+  }
 </style>
 </head>
-
 <body>
-<div id="map"></div>
-<div id="ui"></div>
+<div id="app">
+  <!-- Splash -->
+  <div id="splash">
+    <div class="splash-grid"></div>
+    <div class="splash-logo"><span>☣️</span>DEADZONE</div>
+    <div style="font-family:Rajdhani;font-size:13px;color:var(--text2);letter-spacing:3px;text-transform:uppercase;">Tile Survival Strategy</div>
+    <div class="splash-sub">Открывай тайлы, добывай ресурсы, выживай в постапокалиптическом мире</div>
+    <button class="splash-btn" onclick="startGame()">▶ НАЧАТЬ ВЫЖИВАНИЕ</button>
+    <div class="splash-loading">
+      <span>Загрузка мира</span>
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <!-- Battle pass progress -->
+  <div id="bp-bar" style="width:35%"></div>
+
+  <!-- Top HUD -->
+  <div id="hud-top">
+    <div class="hud-res">
+      <span class="icon">🪵</span>
+      <div><div class="val" id="res-wood">0</div><div class="lbl">ДЕРЕВО</div></div>
+    </div>
+    <div class="hud-res">
+      <span class="icon">🪨</span>
+      <div><div class="val" id="res-stone">0</div><div class="lbl">КАМЕНЬ</div></div>
+    </div>
+    <div class="hud-res">
+      <span class="icon">⚙️</span>
+      <div><div class="val" id="res-metal">0</div><div class="lbl">МЕТАЛЛ</div></div>
+    </div>
+    <div class="hud-res">
+      <span class="icon">💎</span>
+      <div><div class="val" id="res-crystals">50</div><div class="lbl">КРИСТ</div></div>
+    </div>
+    <div id="player-level">LV1</div>
+  </div>
+
+  <!-- Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Mine progress indicators -->
+  <div id="mine-progress"></div>
+
+  <!-- Tile info panel -->
+  <div id="tile-panel">
+    <div class="tile-panel-row">
+      <div class="tile-panel-icon" id="tp-icon">🌲</div>
+      <div class="tile-panel-info">
+        <div class="tile-panel-name" id="tp-name">Лесной участок</div>
+        <div class="tile-panel-type" id="tp-type">ТИП: ЛЕС</div>
+        <div style="margin-top:4px;display:flex;gap:8px;font-size:11px;">
+          <span>⏱ <span id="tp-time">15с</span></span>
+          <span>❤️ <span id="tp-hp">100/100</span></span>
+          <span>⚠️ <span id="tp-danger" style="color:var(--accent2)">НИЗКИЙ</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="tile-loot-preview" id="tp-loot"></div>
+    <div class="tile-actions">
+      <button class="tile-act-btn secondary" onclick="closeTilePanel()">✕ Закрыть</button>
+      <button class="tile-act-btn primary" id="tp-mine-btn" onclick="mineSelectedTile()">⛏ Добывать</button>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notif"></div>
+
+  <!-- Achievement toast -->
+  <div id="achievement-toast">
+    <div class="ach-title">🏆 ДОСТИЖЕНИЕ</div>
+    <div class="ach-name" id="ach-name">Первая добыча</div>
+    <div class="ach-desc" id="ach-desc">Разрушь свой первый тайл</div>
+  </div>
+
+  <!-- Bottom HUD -->
+  <div id="hud-bottom">
+    <div class="hud-btn active" id="btn-map" onclick="switchTab('map')">🗺️<span class="btn-lbl">КАРТА</span></div>
+    <div class="hud-btn" id="btn-base" onclick="switchTab('base')">🏚️<span class="btn-lbl">БАЗА</span></div>
+    <div class="hud-btn" id="btn-survivors" onclick="switchTab('survivors')">👥<span class="btn-lbl">ОТРЯД</span></div>
+    <div id="energy-bar">
+      ⚡<span id="energy-fill">12/15</span>
+    </div>
+    <div class="hud-btn" id="btn-shop" onclick="switchTab('shop')">🛒<span class="btn-lbl">МАГАЗИН</span></div>
+  </div>
+
+  <!-- Battle Overlay -->
+  <div id="battle-overlay">
+    <div class="battle-box">
+      <div class="battle-title" id="battle-title">⚔️ БОЙ!</div>
+      <div class="battle-vs" id="battle-vs">👤 VS 🧟</div>
+      <div style="font-size:13px;color:var(--text2)" id="battle-desc">Идёт сражение...</div>
+      <div class="battle-reward" id="battle-reward"></div>
+      <button class="battle-close" id="battle-close" onclick="closeBattle()" style="display:none">ПРОДОЛЖИТЬ</button>
+    </div>
+  </div>
+</div>
 
 <script>
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-const MAP_SIZE = 7;
-let state = JSON.parse(localStorage.getItem("cat_survival")) || {
-  wood: 0,
-  map: Array(MAP_SIZE*MAP_SIZE).fill(null).map((_,i)=>({
-    id:i,
-    revealed: i === Math.floor(MAP_SIZE*MAP_SIZE/2),
-    type: i === Math.floor(MAP_SIZE*MAP_SIZE/2) ? "base" : randomTile()
-  })),
-  cats: [],
-  base: { buildings: [] },
-  battle: null,
-  expedition: null,
-  lastTick: Date.now()
+// ============================================================
+// GAME STATE
+// ============================================================
+const GS = {
+  player: {
+    name: 'Survivor', level: 1, xp: 0, xpNext: 100,
+    wood: 0, stone: 0, metal: 0, food: 20, crystals: 50, coins: 0,
+    energy: 12, energyMax: 15, energyRegen: 300, // seconds per unit
+    lastEnergyRegen: Date.now()
+  },
+  map: { width: 12, height: 16, tiles: [], offsetX: 0, offsetY: 0, scale: 1 },
+  survivors: [],
+  buildings: {},
+  activeMines: {},  // tileKey -> {survivor, endTime, progress}
+  selectedTile: null,
+  currentTab: 'map',
+  stats: {
+    tilesDestroyed: 0, monstersKilled: 0, resourcesGathered: 0,
+    sessionStart: Date.now()
+  },
+  achievements: [
+    { id:'first_tile', name:'Первый шаг', desc:'Разрушь первый тайл', icon:'⛏', done:false, req:()=>GS.stats.tilesDestroyed>=1 },
+    { id:'10_tiles', name:'Исследователь', desc:'Разрушь 10 тайлов', icon:'🗺️', done:false, req:()=>GS.stats.tilesDestroyed>=10 },
+    { id:'first_kill', name:'Охотник', desc:'Победи первого монстра', icon:'⚔️', done:false, req:()=>GS.stats.monstersKilled>=1 },
+    { id:'lv5', name:'Закалённый', desc:'Достигни 5-го уровня', icon:'⭐', done:false, req:()=>GS.player.level>=5 },
+  ]
 };
 
-function save(){
-  localStorage.setItem("cat_survival", JSON.stringify(state));
-}
-function randomTile(){
-  const r = Math.random();
-  if(r < 0.6) return "wood";
-  if(r < 0.85) return "empty";
-  return "enemy";
+// ============================================================
+// TILE DEFINITIONS
+// ============================================================
+const TILE_TYPES = {
+  empty:    { name:'Пустошь',       icon:'⬜', color:'#1a1e28', loot:{}, hp:0, baseTime:0, danger:0, event:0 },
+  forest:   { name:'Лесной участок',icon:'🌲', color:'#1a2a1a', loot:{wood:[3,8]}, hp:80, baseTime:12, danger:0.05, event:0.1, xp:15 },
+  stone:    { name:'Каменный выход',icon:'🪨', color:'#222230', loot:{stone:[3,7]}, hp:120, baseTime:20, danger:0.08, event:0.12, xp:20 },
+  metal:    { name:'Металлолом',    icon:'⚙️', color:'#1e2228', loot:{metal:[1,4]}, hp:150, baseTime:30, danger:0.15, event:0.15, xp:30 },
+  ruins:    { name:'Руины',         icon:'🏚️', color:'#28201a', loot:{stone:[2,5],metal:[1,3],coins:[5,20]}, hp:100, baseTime:18, danger:0.25, event:0.3, xp:25 },
+  infected: { name:'Заражённая зона',icon:'☣️', color:'#1a2a1a', loot:{food:[2,6],coins:[3,12]}, hp:90, baseTime:15, danger:0.6, event:0.5, xp:35 },
+  rare:     { name:'Редкий ресурс', icon:'💠', color:'#1a1a38', loot:{metal:[2,5],crystals:[1,3],coins:[10,30]}, hp:200, baseTime:45, danger:0.3, event:0.4, xp:60 },
+  water:    { name:'Водоём',        icon:'💧', color:'#1a2035', loot:{food:[3,8]}, hp:50, baseTime:8, danger:0.02, event:0.05, xp:10 },
+  boss:     { name:'ЗОНА BOSS',     icon:'💀', color:'#3a1a1a', loot:{crystals:[3,8],metal:[5,12]}, hp:500, baseTime:90, danger:1.0, event:1.0, xp:150 },
+};
+
+const DANGER_LABELS = ['НУЛЕВОЙ','НИЗКИЙ','СРЕДНИЙ','ВЫСОКИЙ','ЭКСТРЕМ'];
+
+// ============================================================
+// SURVIVORS DATA
+// ============================================================
+const SURVIVOR_ARCHETYPES = [
+  { name:'Алексей', emoji:'👷', rarity:'common',   hp:100, stamina:100, strength:12, mineSpeed:1.0, buildSpeed:1.0, combat:10, carry:50 },
+  { name:'Мария',   emoji:'👩', rarity:'rare',    hp:90,  stamina:120, strength:10, mineSpeed:1.3, buildSpeed:1.2, combat:8,  carry:40 },
+  { name:'Виктор',  emoji:'🧔', rarity:'epic',    hp:140, stamina:90,  strength:18, mineSpeed:0.8, buildSpeed:0.9, combat:20, carry:70 },
+  { name:'Ника',    emoji:'🧝', rarity:'rare',    hp:85,  stamina:130, strength:9,  mineSpeed:1.5, buildSpeed:1.0, combat:12, carry:35 },
+  { name:'ЗВЕРЬ',   emoji:'🦁', rarity:'legendary',hp:200,stamina:150, strength:28, mineSpeed:1.8, buildSpeed:0.7, combat:35, carry:100},
+];
+
+// ============================================================
+// BUILDINGS
+// ============================================================
+const BUILDING_DEFS = {
+  hq:        { name:'Штаб',         icon:'🏛️', desc:'Лимит тайлов и выживших', baseCost:{wood:50,stone:30}, baseTime:60 },
+  warehouse: { name:'Склад',        icon:'🏪', desc:'Увеличивает лимит ресурсов', baseCost:{wood:30,stone:20}, baseTime:45 },
+  farm:      { name:'Ферма',        icon:'🌾', desc:'+2 еды/мин', baseCost:{wood:20,food:5}, baseTime:30 },
+  workshop:  { name:'Мастерская',   icon:'🔧', desc:'Крафт снаряжения', baseCost:{wood:40,metal:15}, baseTime:90 },
+  barracks:  { name:'Бараки',       icon:'⚔️', desc:'Наём выживших', baseCost:{wood:35,stone:25}, baseTime:75 },
+  lab:       { name:'Лаборатория',  icon:'🔬', desc:'Исследования перков', baseCost:{metal:20,stone:30}, baseTime:120 },
+  hospital:  { name:'Госпиталь',    icon:'🏥', desc:'Лечение выживших', baseCost:{wood:25,stone:15}, baseTime:60 },
+  power:     { name:'Электростанция',icon:'⚡',desc:'Генерация энергии', baseCost:{metal:30,stone:20}, baseTime:90 },
+};
+
+// ============================================================
+// MAP GENERATION
+// ============================================================
+function generateMap() {
+  const { width, height } = GS.map;
+  GS.map.tiles = [];
+  const typePool = [
+    'forest','forest','forest','forest',
+    'stone','stone','stone',
+    'metal','metal',
+    'ruins','ruins',
+    'infected',
+    'rare',
+    'water','water',
+    'empty','empty',
+  ];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const dist = Math.sqrt((x-width/2)**2 + (y-height/2)**2);
+      const maxDist = Math.sqrt((width/2)**2 + (height/2)**2);
+      const danger = Math.min(1, dist / maxDist);
+
+      let type;
+      if (x === Math.floor(width/2) && y === Math.floor(height/2)) type = 'empty'; // start
+      else if (danger > 0.85 && Math.random() < 0.3) type = 'boss';
+      else if (danger > 0.6 && Math.random() < 0.2) type = 'rare';
+      else type = typePool[Math.floor(Math.random() * typePool.length)];
+
+      const def = TILE_TYPES[type];
+      const isStart = (x === Math.floor(width/2) && y === Math.floor(height/2));
+      const nearStart = Math.abs(x - Math.floor(width/2)) + Math.abs(y - Math.floor(height/2)) <= 1;
+
+      GS.map.tiles.push({
+        x, y, type,
+        hp: def.hp, maxHp: def.hp,
+        revealed: isStart || nearStart,
+        destroyed: isStart,
+        danger: danger,
+        xp: def.xp || 0,
+        id: `${x}_${y}`
+      });
+    }
+  }
 }
 
-function exploreTile(){
-  const hidden = state.map.filter(t=>!t.revealed);
-  if(!hidden.length) return;
-  const t = hidden[Math.floor(Math.random()*hidden.length)];
-  t.revealed = true;
-
-  if(t.type === "wood") state.wood += 5;
-  if(t.type === "enemy") startBattle();
-
-  save();
-  render();
+function getTile(x, y) {
+  return GS.map.tiles.find(t => t.x === x && t.y === y);
 }
-function createCat(role){
+
+// ============================================================
+// CANVAS RENDERER
+// ============================================================
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+let animFrame;
+let camX = 0, camY = 0, camScale = 1;
+let isDragging = false, dragStart = { x:0, y:0 }, camStart = { x:0, y:0 };
+let pinchDist = 0;
+const TILE_SIZE = 52;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const cols = GS.map.width;
+  const rows = GS.map.height;
+  camX = (canvas.width - cols * TILE_SIZE) / 2;
+  camY = (canvas.height - rows * TILE_SIZE) / 2 + 20;
+}
+
+function worldToCanvas(tx, ty) {
   return {
-    id: crypto.randomUUID(),
-    name: ["Мур","Рыжик","Тень","Лапа"][Math.floor(Math.random()*4)],
-    role,
-    hp:100,
-    energy:100,
-    status:"idle",
-    equipment:{ weapon:null, armor:null, trinket:null }
+    x: camX + tx * TILE_SIZE * camScale,
+    y: camY + ty * TILE_SIZE * camScale
   };
 }
 
-if(state.cats.length === 0){
-  state.cats.push(createCat("worker"));
-  state.cats.push(createCat("scout"));
-  save();
-}
-const BUILDINGS = {
-  lumber:{ name:"Лесопилка", cost:30 }
-};
-
-function build(type){
-  if(state.wood < BUILDINGS[type].cost) return;
-  state.wood -= BUILDINGS[type].cost;
-  state.base.buildings.push({ id:crypto.randomUUID(), type, level:1 });
-  save(); render();
-}
-const ITEMS = [
-  { name:"Деревянный меч", slot:"weapon", power:3 }
-];
-
-function equip(catId,item){
-  const cat = state.cats.find(c=>c.id===catId);
-  if(!cat) return;
-  cat.equipment[item.slot] = item;
-  save(); render();
-}
-function startBattle(){
-  if(state.battle) return;
-  state.battle = { enemyHp:40 };
+function canvasToWorld(cx, cy) {
+  return {
+    x: Math.floor((cx - camX) / (TILE_SIZE * camScale)),
+    y: Math.floor((cy - camY) / (TILE_SIZE * camScale))
+  };
 }
 
-function battleTick(){
-  if(!state.battle) return;
-  state.battle.enemyHp -= 10;
-  if(state.battle.enemyHp <= 0){
-    state.battle = null;
-    state.wood += 10;
+function drawGame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Background
+  ctx.fillStyle = '#080a0e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid pattern
+  ctx.strokeStyle = 'rgba(42,53,72,0.2)';
+  ctx.lineWidth = 0.5;
+  const gs = 32;
+  for (let x = 0; x < canvas.width; x += gs) {
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x, canvas.height); ctx.stroke();
   }
-  save();
-}
-function startExpedition(){
-  if(state.expedition) return;
-  state.expedition = { start:Date.now(), duration:30000 };
-}
+  for (let y = 0; y < canvas.height; y += gs) {
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+  }
 
-function updateExpedition(){
-  if(!state.expedition) return;
-  if(Date.now() - state.expedition.start >= state.expedition.duration){
-    state.wood += 20;
-    state.expedition = null;
-    save();
-  }
-}
-setInterval(()=>{
-  const now = Date.now();
-  const sec = Math.floor((now - state.lastTick)/1000);
-  if(sec > 0){
-    state.wood += sec;
-    battleTick();
-    updateExpedition();
-    state.lastTick = now;
-    save();
-    render();
-  }
-},3000);
-function render(){
-  const map = document.getElementById("map");
-  map.innerHTML = "";
-  state.map.forEach(t=>{
-    const d = document.createElement("div");
-    d.className = "tile " + (t.revealed ? t.type : "hidden");
-    d.textContent = t.revealed ? (
-      t.type==="base"?"🏕":
-      t.type==="wood"?"🪵":
-      t.type==="enemy"?"⚠":""
-    ):"";
-    map.appendChild(d);
+  const ts = TILE_SIZE * camScale;
+
+  GS.map.tiles.forEach(tile => {
+    const { x: cx, y: cy } = worldToCanvas(tile.x, tile.y);
+    if (cx > canvas.width || cy > canvas.height || cx + ts < 0 || cy + ts < 0) return;
+
+    if (!tile.revealed) {
+      // Fog of war
+      const grad = ctx.createLinearGradient(cx, cy, cx+ts, cy+ts);
+      grad.addColorStop(0, '#0c0f14');
+      grad.addColorStop(1, '#080a0d');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(cx+1, cy+1, ts-2, ts-2, 4*camScale);
+      ctx.fill();
+      ctx.strokeStyle = '#1a1e28';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Question mark
+      ctx.fillStyle = 'rgba(42,53,72,0.8)';
+      ctx.font = `bold ${12*camScale}px Rajdhani`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', cx + ts/2, cy + ts/2);
+      return;
+    }
+
+    const def = TILE_TYPES[tile.type];
+    const mine = GS.activeMines[tile.id];
+    const isSelected = GS.selectedTile && GS.selectedTile.id === tile.id;
+
+    // Tile background
+    let bgColor = def.color;
+    if (tile.destroyed) bgColor = '#0f1015';
+
+    ctx.fillStyle = bgColor;
+    ctx.beginPath();
+    ctx.roundRect(cx+1, cy+1, ts-2, ts-2, 4*camScale);
+    ctx.fill();
+
+    // Border
+    let borderColor = '#2a3548';
+    if (isSelected) borderColor = '#00d4ff';
+    else if (mine) borderColor = '#00ff88';
+    else if (tile.type === 'boss') borderColor = '#ff3b3b';
+    else if (tile.type === 'rare') borderColor = '#b44aff';
+
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.beginPath();
+    ctx.roundRect(cx+1, cy+1, ts-2, ts-2, 4*camScale);
+    ctx.stroke();
+
+    if (!tile.destroyed) {
+      // Icon
+      ctx.font = `${Math.floor(20*camScale)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(def.icon, cx + ts/2, cy + ts/2 - 4*camScale);
+
+      // HP bar
+      if (tile.hp < tile.maxHp && tile.maxHp > 0) {
+        const bw = (ts-8)*camScale, bh = 4*camScale;
+        const bx = cx+4, by = cy+ts-8*camScale;
+        ctx.fillStyle = '#1a1e28';
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 2); ctx.fill();
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath(); ctx.roundRect(bx, by, bw*(tile.hp/tile.maxHp), bh, 2); ctx.fill();
+      }
+
+      // Mining progress
+      if (mine) {
+        const now = Date.now();
+        const prog = Math.min(1, (now - mine.startTime) / (mine.endTime - mine.startTime));
+        const bw = (ts-8)*camScale, bh = 4*camScale;
+        const bx = cx+4, by = cy+8*camScale;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 2); ctx.fill();
+        ctx.fillStyle = '#00d4ff';
+        ctx.beginPath(); ctx.roundRect(bx, by, bw*prog, bh, 2); ctx.fill();
+
+        // Sparkle effect
+        if (Math.random() < 0.3) {
+          ctx.fillStyle = `rgba(0,212,255,${Math.random()*0.8})`;
+          ctx.beginPath();
+          ctx.arc(
+            cx + Math.random()*ts,
+            cy + Math.random()*ts,
+            1.5*camScale, 0, Math.PI*2
+          );
+          ctx.fill();
+        }
+      }
+
+      // Danger indicator
+      if (tile.danger > 0.4 && !mine) {
+        ctx.fillStyle = tile.type === 'boss' ? '#ff3b3b' : 'rgba(255,107,53,0.8)';
+        ctx.font = `${9*camScale}px Rajdhani`;
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠', cx + ts - 8*camScale, cy + 8*camScale);
+      }
+    } else {
+      // Destroyed - show faint icon
+      ctx.globalAlpha = 0.15;
+      ctx.font = `${16*camScale}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(def.icon, cx + ts/2, cy + ts/2);
+      ctx.globalAlpha = 1;
+    }
+
+    // Selected glow
+    if (isSelected) {
+      ctx.strokeStyle = 'rgba(0,212,255,0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(cx-1, cy-1, ts+2, ts+2, 6*camScale);
+      ctx.stroke();
+    }
   });
 
-  document.getElementById("ui").innerHTML = `
-    🪵 ${state.wood}
-    <button onclick="exploreTile()">🔍 Исследовать</button>
-    <button onclick="build('lumber')">🏗 Лесопилка</button>
-    <button onclick="startExpedition()">🧭 Экспедиция</button>
-  `;
+  // Draw scan line effect
+  ctx.fillStyle = 'rgba(0,212,255,0.01)';
+  const scanY = ((Date.now() / 20) % canvas.height);
+  ctx.fillRect(0, scanY, canvas.width, 2);
 }
-render();
+
+// ============================================================
+// TOUCH / MOUSE CONTROLS
+// ============================================================
+let lastTap = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    pinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    return;
+  }
+  isDragging = false;
+  dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  camStart = { x: camX, y: camY };
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const delta = dist - pinchDist;
+    pinchDist = dist;
+    camScale = Math.max(0.5, Math.min(2.0, camScale + delta * 0.005));
+    return;
+  }
+  const dx = e.touches[0].clientX - dragStart.x;
+  const dy = e.touches[0].clientY - dragStart.y;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isDragging = true;
+  if (isDragging) {
+    camX = camStart.x + dx;
+    camY = camStart.y + dy;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  if (e.touches.length > 0) return;
+  if (!isDragging) {
+    const touch = e.changedTouches[0];
+    handleTileClick(touch.clientX, touch.clientY);
+  }
+  isDragging = false;
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  isDragging = false;
+  dragStart = { x: e.clientX, y: e.clientY };
+  camStart = { x: camX, y: camY };
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (e.buttons === 1) {
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) isDragging = true;
+    if (isDragging) {
+      camX = camStart.x + dx;
+      camY = camStart.y + dy;
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', (e) => {
+  if (!isDragging) handleTileClick(e.clientX, e.clientY);
+  isDragging = false;
+});
+
+canvas.addEventListener('wheel', (e) => {
+  camScale = Math.max(0.5, Math.min(2.0, camScale - e.deltaY * 0.001));
+});
+
+function handleTileClick(cx, cy) {
+  if (GS.currentTab !== 'map') return;
+  const { x, y } = canvasToWorld(cx, cy);
+  const tile = getTile(x, y);
+  if (!tile) return;
+
+  if (!tile.revealed) {
+    revealTile(tile);
+    return;
+  }
+  if (!tile.destroyed) {
+    selectTile(tile);
+  }
+}
+
+// ============================================================
+// TILE REVEAL & MINING
+// ============================================================
+function canReveal(tile) {
+  // Must be adjacent to a revealed tile
+  const adj = [
+    getTile(tile.x-1, tile.y), getTile(tile.x+1, tile.y),
+    getTile(tile.x, tile.y-1), getTile(tile.x, tile.y+1)
+  ];
+  return adj.some(t => t && t.revealed);
+}
+
+function revealTile(tile) {
+  if (!canReveal(tile)) { showNotif('Сначала откройте соседние тайлы!', 'danger'); return; }
+  if (GS.player.energy <= 0) { showNotif('Нет энергии! Подождите восстановления ⚡', 'danger'); return; }
+
+  GS.player.energy--;
+  updateEnergyUI();
+  tile.revealed = true;
+
+  // Check for immediate event
+  const def = TILE_TYPES[tile.type];
+  if (Math.random() < def.event * 0.3) {
+    triggerTileEvent(tile);
+  }
+
+  // Reveal adjacent fog visually
+  showNotif(`🗺️ Обнаружен: ${def.name}`, 'success');
+  selectTile(tile);
+}
+
+function selectTile(tile) {
+  if (GS.activeMines[tile.id]) return; // Already mining
+
+  GS.selectedTile = tile;
+  const def = TILE_TYPES[tile.type];
+  const panel = document.getElementById('tile-panel');
+
+  document.getElementById('tp-icon').textContent = def.icon;
+  document.getElementById('tp-name').textContent = def.name;
+  document.getElementById('tp-type').textContent = `ТИП: ${tile.type.toUpperCase()}`;
+  document.getElementById('tp-hp').textContent = `${tile.hp}/${tile.maxHp}`;
+
+  const mineTime = calcMineTime(tile);
+  document.getElementById('tp-time').textContent = mineTime >= 60 ? `${Math.floor(mineTime/60)}м ${mineTime%60}с` : `${mineTime}с`;
+
+  const dangerLevel = Math.min(4, Math.floor(tile.danger * 5));
+  const dangerEl = document.getElementById('tp-danger');
+  dangerEl.textContent = DANGER_LABELS[dangerLevel];
+  dangerEl.style.color = ['var(--accent2)','var(--accent2)','var(--accent4)','var(--epic)','var(--danger)'][dangerLevel];
+
+  // Loot preview
+  const lootEl = document.getElementById('tp-loot');
+  lootEl.innerHTML = '';
+  Object.entries(def.loot || {}).forEach(([res, range]) => {
+    const icons = { wood:'🪵', stone:'🪨', metal:'⚙️', food:'🍖', crystals:'💎', coins:'🪙' };
+    lootEl.innerHTML += `<div class="loot-chip">${icons[res]||'📦'} ${range[0]}-${range[1]}</div>`;
+  });
+  if (!Object.keys(def.loot||{}).length) lootEl.innerHTML = '<div class="loot-chip" style="color:var(--text3)">Нет лута</div>';
+
+  const btn = document.getElementById('tp-mine-btn');
+  const freeS = GS.survivors.filter(s=>!s.busy&&s.hp>0);
+  btn.disabled = freeS.length === 0 || tile.type === 'empty' || tile.destroyed;
+  btn.textContent = tile.destroyed ? '✓ Добыто' : freeS.length ? `⛏ Добывать (${freeS.length} свободны)` : '❌ Нет выживших';
+
+  panel.style.display = 'block';
+}
+
+function closeTilePanel() {
+  document.getElementById('tile-panel').style.display = 'none';
+  GS.selectedTile = null;
+}
+
+function calcMineTime(tile) {
+  const def = TILE_TYPES[tile.type];
+  if (!def.baseTime) return 0;
+  // Find best free survivor
+  const surv = GS.survivors.filter(s=>!s.busy&&s.hp>0).sort((a,b)=>b.mineSpeed-a.mineSpeed)[0];
+  const speedMod = surv ? (1 / surv.mineSpeed) : 1;
+  return Math.max(3, Math.round(def.baseTime * speedMod));
+}
+
+function mineSelectedTile() {
+  const tile = GS.selectedTile;
+  if (!tile || tile.destroyed) return;
+
+  const freeS = GS.survivors.filter(s=>!s.busy&&s.hp>0);
+  if (!freeS.length) { showNotif('Нет свободных выживших!', 'danger'); return; }
+
+  const surv = freeS.sort((a,b)=>b.mineSpeed-a.mineSpeed)[0];
+  const mineTime = calcMineTime(tile) * 1000;
+
+  surv.busy = true;
+  surv.busyTile = tile.id;
+  surv.busyLabel = `⛏ Добыча: ${TILE_TYPES[tile.type].name}`;
+
+  const endTime = Date.now() + mineTime;
+  GS.activeMines[tile.id] = { survivorId: surv.id, startTime: Date.now(), endTime };
+
+  closeTilePanel();
+  showNotif(`${surv.emoji} ${surv.name} начал добычу...`, 'success');
+
+  // Check for combat event
+  const def = TILE_TYPES[tile.type];
+  if (Math.random() < def.danger) {
+    setTimeout(() => triggerCombat(tile, surv), 1500);
+  } else {
+    setTimeout(() => completeMine(tile, surv), mineTime);
+  }
+
+  updateSurvivorsUI();
+}
+
+function completeMine(tile, surv) {
+  const def = TILE_TYPES[tile.type];
+  const mine = GS.activeMines[tile.id];
+  if (!mine) return;
+
+  delete GS.activeMines[tile.id];
+  surv.busy = false;
+  surv.busyTile = null;
+  surv.busyLabel = null;
+
+  // Calculate loot
+  const lootLines = [];
+  const icons = { wood:'🪵', stone:'🪨', metal:'⚙️', food:'🍖', crystals:'💎', coins:'🪙' };
+  Object.entries(def.loot || {}).forEach(([res, range]) => {
+    // BonusFormula: BaseLoot * (1 + mineBonus + techBonus)
+    const survBonus = (surv.mineSpeed - 1) * 0.5;
+    const base = Math.floor(Math.random() * (range[1]-range[0]+1)) + range[0];
+    const total = Math.round(base * (1 + survBonus));
+    GS.player[res] = (GS.player[res] || 0) + total;
+    lootLines.push(`${icons[res]||'📦'}+${total}`);
+  });
+
+  // XP
+  const xpGain = Math.round(def.xp * (1 + (surv.level || 1) * 0.1));
+  gainXP(xpGain, surv);
+  GS.stats.tilesDestroyed++;
+  GS.stats.resourcesGathered += Object.keys(def.loot||{}).length;
+
+  tile.destroyed = true;
+  tile.hp = 0;
+
+  showNotif(`✅ Добыто! ${lootLines.join(' ')} +${xpGain}XP`, 'reward');
+
+  // Rare drop check
+  if (Math.random() < 0.05 + (tile.type === 'rare' ? 0.15 : 0)) {
+    setTimeout(() => {
+      GS.player.crystals += 2;
+      showNotif('💎 РЕДКАЯ НАХОДКА: +2 Кристалла!', 'rare');
+    }, 500);
+  }
+
+  updateHUD();
+  updateSurvivorsUI();
+  checkAchievements();
+}
+
+function triggerCombat(tile, surv) {
+  const def = TILE_TYPES[tile.type];
+  const mine = GS.activeMines[tile.id];
+
+  // Calculate enemy stats
+  const enemyRating = Math.round(15 * Math.pow(1.15, tile.danger * 10));
+  const survRating = surv.combat * (surv.level || 1);
+  const winChance = survRating / (survRating + enemyRating);
+
+  const enemies = ['🧟','👾','🐺','💀','🦂','👹'];
+  const enemy = enemies[Math.floor(Math.random() * enemies.length)];
+  const isWin = Math.random() < winChance;
+
+  const battleEl = document.getElementById('battle-overlay');
+  const battleTitle = document.getElementById('battle-title');
+  const battleVs = document.getElementById('battle-vs');
+  const battleDesc = document.getElementById('battle-desc');
+  const battleReward = document.getElementById('battle-reward');
+  const battleClose = document.getElementById('battle-close');
+
+  battleTitle.textContent = '⚔️ БОЙ!';
+  battleTitle.className = 'battle-title';
+  battleVs.textContent = `${surv.emoji} VS ${enemy}`;
+  battleDesc.textContent = `${surv.name} (Рейтинг: ${survRating}) vs Враг (Рейтинг: ${enemyRating})`;
+  battleReward.innerHTML = '';
+  battleClose.style.display = 'none';
+  battleEl.style.display = 'flex';
+
+  setTimeout(() => {
+    if (isWin) {
+      battleTitle.textContent = '🏆 ПОБЕДА!';
+      battleTitle.className = 'battle-title win';
+      const coins = Math.floor(5 + Math.random() * 15 + tile.danger * 20);
+      const xpGain = Math.round(30 * tile.danger * 5 + 10);
+      GS.player.coins += coins;
+      gainXP(xpGain, surv);
+      GS.stats.monstersKilled++;
+      battleReward.innerHTML = `<div style="font-size:13px;color:var(--text2);margin-bottom:8px">Награды за бой:</div>
+        <div class="battle-reward-item">🪙 +${coins} монет</div>
+        <div class="battle-reward-item">⭐ +${xpGain} опыта</div>`;
+      showNotif(`${surv.emoji} победил ${enemy}! 🏆`, 'success');
+
+      // Continue mining after combat win
+      const remaining = mine ? Math.max(2000, mine.endTime - Date.now()) : 10000;
+      setTimeout(() => completeMine(tile, surv), remaining);
+
+    } else {
+      battleTitle.textContent = '💀 ПОРАЖЕНИЕ';
+      battleTitle.className = 'battle-title lose';
+      const hpLoss = Math.floor(surv.hp * 0.4);
+      surv.hp = Math.max(1, surv.hp - hpLoss);
+      const healTime = Math.floor(30 + hpLoss * 0.5);
+      battleReward.innerHTML = `<div class="battle-reward-item" style="color:var(--danger)">❤️ ${surv.name} получил урон (-${hpLoss} HP)</div>
+        <div class="battle-reward-item" style="color:var(--text2)">🏥 Восстановление: ${healTime}с</div>`;
+      showNotif(`${surv.emoji} проиграл бой!`, 'danger');
+
+      // Survivor wounded - cancel mining
+      delete GS.activeMines[tile.id];
+      surv.busy = false;
+      surv.busyTile = null;
+
+      // Auto heal
+      setTimeout(() => {
+        surv.hp = Math.min(surv.maxHp, surv.hp + hpLoss);
+        updateSurvivorsUI();
+      }, healTime * 1000);
+    }
+
+    updateHUD();
+    updateSurvivorsUI();
+    checkAchievements();
+    battleClose.style.display = 'inline-block';
+  }, 2000);
+}
+
+function closeBattle() {
+  document.getElementById('battle-overlay').style.display = 'none';
+}
+
+function triggerTileEvent(tile) {
+  const events = ['chest','trap','resource'];
+  const evt = events[Math.floor(Math.random() * events.length)];
+  if (evt === 'chest') {
+    const coins = Math.floor(Math.random() * 20 + 5);
+    GS.player.coins += coins;
+    showNotif(`📦 Найден сундук! +${coins} монет`, 'reward');
+    updateHUD();
+  } else if (evt === 'trap') {
+    showNotif('💥 ЛОВУШКА на тайле! Будьте осторожны!', 'danger');
+  }
+}
+
+// ============================================================
+// XP & LEVELING
+// ============================================================
+function gainXP(amount, surv) {
+  // Player XP
+  GS.player.xp += amount;
+  while (GS.player.xp >= GS.player.xpNext) {
+    GS.player.xp -= GS.player.xpNext;
+    GS.player.level++;
+    GS.player.xpNext = Math.round(100 * Math.pow(1.3, GS.player.level - 1));
+    GS.player.energy = Math.min(GS.player.energyMax + 3, GS.player.energy + 5);
+    GS.player.energyMax++;
+    document.getElementById('player-level').textContent = `LV${GS.player.level}`;
+    showNotif(`🎉 УРОВЕНЬ ${GS.player.level}! +5 Энергии`, 'rare');
+  }
+
+  // Survivor XP
+  if (surv) {
+    surv.xp = (surv.xp || 0) + amount;
+    surv.xpNext = surv.xpNext || 80;
+    if (surv.xp >= surv.xpNext) {
+      surv.xp -= surv.xpNext;
+      surv.level = (surv.level || 1) + 1;
+      surv.xpNext = Math.round(80 * Math.pow(1.25, surv.level - 1));
+      surv.mineSpeed *= 1.05;
+      surv.combat = Math.round(surv.combat * 1.08);
+      showNotif(`${surv.emoji} ${surv.name} → Уровень ${surv.level}!`, 'success');
+    }
+  }
+}
+
+// ============================================================
+// ENERGY SYSTEM
+// ============================================================
+function updateEnergy() {
+  const now = Date.now();
+  const elapsed = (now - GS.player.lastEnergyRegen) / 1000;
+  const regenUnits = Math.floor(elapsed / GS.player.energyRegen);
+  if (regenUnits > 0 && GS.player.energy < GS.player.energyMax) {
+    GS.player.energy = Math.min(GS.player.energyMax, GS.player.energy + regenUnits);
+    GS.player.lastEnergyRegen = now;
+    updateEnergyUI();
+  }
+}
+
+function updateEnergyUI() {
+  document.getElementById('energy-fill').textContent = `${GS.player.energy}/${GS.player.energyMax}`;
+}
+
+// ============================================================
+// HUD UPDATE
+// ============================================================
+function updateHUD() {
+  const p = GS.player;
+  document.getElementById('res-wood').textContent = p.wood > 999 ? (p.wood/1000).toFixed(1)+'k' : p.wood;
+  document.getElementById('res-stone').textContent = p.stone > 999 ? (p.stone/1000).toFixed(1)+'k' : p.stone;
+  document.getElementById('res-metal').textContent = p.metal > 999 ? (p.metal/1000).toFixed(1)+'k' : p.metal;
+  document.getElementById('res-crystals').textContent = p.crystals;
+  document.getElementById('player-level').textContent = `LV${p.level}`;
+  updateEnergyUI();
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function showNotif(text, type='success') {
+  const container = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+function checkAchievements() {
+  GS.achievements.forEach(ach => {
+    if (!ach.done && ach.req()) {
+      ach.done = true;
+      showAchievement(ach);
+    }
+  });
+}
+
+function showAchievement(ach) {
+  const toast = document.getElementById('achievement-toast');
+  document.getElementById('ach-name').textContent = ach.icon + ' ' + ach.name;
+  document.getElementById('ach-desc').textContent = ach.desc;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+// ============================================================
+// TABS / PANELS
+// ============================================================
+function switchTab(tab) {
+  GS.currentTab = tab;
+  ['map','base','survivors','shop'].forEach(t => {
+    const btn = document.getElementById(`btn-${t}`);
+    if (btn) btn.className = 'hud-btn' + (t === tab ? ' active' : '');
+  });
+
+  closeTilePanel();
+
+  if (tab === 'survivors') showSurvivorsPanel();
+  else if (tab === 'base') showBasePanel();
+  else if (tab === 'shop') showShopPanel();
+  else removePanel();
+}
+
+function removePanel() {
+  const existing = document.getElementById('active-panel');
+  if (existing) existing.remove();
+}
+
+function showSurvivorsPanel() {
+  removePanel();
+  const panel = document.createElement('div');
+  panel.id = 'active-panel';
+  panel.className = 'panel-overlay';
+  panel.innerHTML = `
+    <div class="panel-sheet">
+      <div class="panel-title">
+        👥 МОЙ ОТРЯД
+        <button class="panel-close" onclick="switchTab('map')">✕</button>
+      </div>
+      <div class="survivor-grid" id="surv-list"></div>
+    </div>`;
+  document.getElementById('app').appendChild(panel);
+  updateSurvivorsUI();
+}
+
+function updateSurvivorsUI() {
+  const list = document.getElementById('surv-list');
+  if (!list) return;
+  list.innerHTML = GS.survivors.map(s => {
+    const hpPct = (s.hp / s.maxHp * 100).toFixed(0);
+    const xpPct = s.xpNext ? ((s.xp||0) / s.xpNext * 100).toFixed(0) : 0;
+    const rarityColors = { common:'#8fa0be', rare:'#b44aff', epic:'#ff6b35', legendary:'#ffd700' };
+    return `<div class="survivor-card ${s.rarity} ${s.busy?'busy':''}">
+      <div class="surv-avatar">${s.emoji}</div>
+      <div class="surv-info">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:space-between">
+          <div class="surv-name">${s.name}</div>
+          <div class="surv-level">Lv${s.level||1}</div>
+        </div>
+        <div class="surv-rarity ${s.rarity}">${s.rarity.toUpperCase()}</div>
+        <div class="surv-stats">
+          <div class="surv-stat">⛏<span>${s.mineSpeed.toFixed(1)}x</span></div>
+          <div class="surv-stat">⚔️<span>${s.combat}</span></div>
+          <div class="surv-stat">💪<span>${s.strength}</span></div>
+          <div class="surv-stat">📦<span>${s.carry}</span></div>
+        </div>
+        <div class="surv-bar-wrap">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:2px">
+            <span>❤️ ${s.hp}/${s.maxHp}</span><span>⭐ ${s.xp||0}/${s.xpNext||80}</span>
+          </div>
+          <div class="surv-bar-bg"><div class="surv-bar-fill hp" style="width:${hpPct}%"></div></div>
+          <div class="surv-bar-bg" style="margin-top:2px"><div class="surv-bar-fill xp" style="width:${xpPct}%"></div></div>
+        </div>
+      </div>
+      ${s.busy ? `<div class="surv-action">⛏<br>Добыча</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function showBasePanel() {
+  removePanel();
+  const panel = document.createElement('div');
+  panel.id = 'active-panel';
+  panel.className = 'panel-overlay';
+
+  let bldHtml = '';
+  Object.entries(BUILDING_DEFS).forEach(([key, def]) => {
+    const bld = GS.buildings[key] || { level: 0, upgrading: false };
+    const lvl = bld.level || 0;
+    const costMult = Math.pow(1.35, lvl);
+    const cost = {};
+    Object.entries(def.baseCost).forEach(([r,v]) => cost[r] = Math.round(v * costMult));
+    const canUpgrade = Object.entries(cost).every(([r,v]) => (GS.player[r]||0) >= v);
+    const costStr = Object.entries(cost).map(([r,v])=>{
+      const icons={wood:'🪵',stone:'🪨',metal:'⚙️',food:'🍖'};
+      return `${icons[r]||'📦'}${v}`;
+    }).join(' ');
+
+    bldHtml += `<div class="building-card ${bld.upgrading?'upgrading':''}">
+      <div class="bld-icon">${def.icon}</div>
+      <div class="bld-name">${def.name}</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px">${def.desc}</div>
+      <div class="bld-level">Ур. ${lvl}</div>
+      <button class="bld-btn ${canUpgrade?'can-upgrade':''}" onclick="upgradeBuilding('${key}')">
+        ${bld.upgrading ? '⏳ Строится...' : lvl===0 ? `🔨 Построить ${costStr}` : `▲ Улучшить ${costStr}`}
+      </button>
+    </div>`;
+  });
+
+  panel.innerHTML = `
+    <div class="panel-sheet">
+      <div class="panel-title">
+        🏚️ МОЯ БАЗА
+        <button class="panel-close" onclick="switchTab('map')">✕</button>
+      </div>
+      <div class="building-grid">${bldHtml}</div>
+    </div>`;
+  document.getElementById('app').appendChild(panel);
+}
+
+function upgradeBuilding(key) {
+  const def = BUILDING_DEFS[key];
+  const bld = GS.buildings[key] || { level: 0, upgrading: false };
+  if (bld.upgrading) { showNotif('Здание уже строится!', 'danger'); return; }
+
+  const lvl = bld.level || 0;
+  const costMult = Math.pow(1.35, lvl);
+  const cost = {};
+  Object.entries(def.baseCost).forEach(([r,v]) => cost[r] = Math.round(v * costMult));
+
+  if (!Object.entries(cost).every(([r,v]) => (GS.player[r]||0) >= v)) {
+    showNotif('Недостаточно ресурсов!', 'danger'); return;
+  }
+
+  Object.entries(cost).forEach(([r,v]) => GS.player[r] -= v);
+  GS.buildings[key] = { level: lvl, upgrading: true };
+
+  const buildTime = Math.round(def.baseTime * Math.pow(1.2, lvl)) * 1000;
+  showNotif(`🔨 ${def.name}: строится ${Math.round(buildTime/1000)}с`, 'success');
+
+  setTimeout(() => {
+    GS.buildings[key] = { level: lvl + 1, upgrading: false };
+    showNotif(`✅ ${def.name} улучшена до ур. ${lvl+1}!`, 'reward');
+    updateHUD();
+    if (GS.currentTab === 'base') showBasePanel();
+  }, buildTime);
+
+  updateHUD();
+  showBasePanel();
+}
+
+function showShopPanel() {
+  removePanel();
+  const panel = document.createElement('div');
+  panel.id = 'active-panel';
+  panel.className = 'panel-overlay';
+  panel.innerHTML = `
+    <div class="panel-sheet">
+      <div class="panel-title">
+        🛒 МАГАЗИН
+        <button class="panel-close" onclick="switchTab('map')">✕</button>
+      </div>
+      <div class="shop-tabs">
+        <div class="shop-tab active" onclick="filterShop('resources',this)">Ресурсы</div>
+        <div class="shop-tab" onclick="filterShop('boosters',this)">Бустеры</div>
+        <div class="shop-tab" onclick="filterShop('crystals',this)">Кристаллы</div>
+      </div>
+      <div class="shop-grid" id="shop-grid">
+        ${shopItemsHTML('resources')}
+      </div>
+    </div>`;
+  document.getElementById('app').appendChild(panel);
+}
+
+function shopItemsHTML(category) {
+  const items = {
+    resources: [
+      { icon:'🪵', name:'Пачка дерева', amount:'×150', price:50, currency:'coins', tag:null },
+      { icon:'🪨', name:'Мешок камня', amount:'×100', price:60, currency:'coins', tag:null },
+      { icon:'⚙️', name:'Металлолом', amount:'×50', price:80, currency:'coins', tag:'ХИТ' },
+      { icon:'🍖', name:'Запас еды', amount:'×80', price:40, currency:'coins', tag:null },
+    ],
+    boosters: [
+      { icon:'⚡', name:'Заряд энергии', amount:'+10', price:20, currency:'crystals', tag:'ПОПУЛЯРНО' },
+      { icon:'⏩', name:'Ускорение ×2', amount:'1 час', price:50, currency:'crystals', tag:null },
+      { icon:'🔑', name:'Слот выжившего', amount:'+1', price:100, currency:'crystals', tag:null },
+      { icon:'🎲', name:'Призыв выжившего', amount:'×1', price:150, currency:'crystals', tag:'НОВИНКА' },
+    ],
+    crystals: [
+      { icon:'💎', name:'Горстка', amount:'×50', price:'59₽', currency:'real', tag:null, featured:false },
+      { icon:'💎', name:'Мешочек', amount:'×200', price:'199₽', currency:'real', tag:'ВЫГОДНО', featured:true },
+      { icon:'💎', name:'Сундук', amount:'×600', price:'499₽', currency:'real', tag:null, featured:false },
+      { icon:'👑', name:'Battle Pass', amount:'Premium', price:'299₽', currency:'real', tag:'ЛУЧШАЯ ЦЕННОСТЬ', featured:true },
+    ]
+  };
+
+  return (items[category]||[]).map(item => `
+    <div class="shop-item ${item.featured?'featured':''}" onclick="buyShopItem('${item.name}','${item.currency}',${item.price||0})">
+      ${item.tag ? `<div class="shop-badge">${item.tag}</div>` : ''}
+      <div class="shop-icon">${item.icon}</div>
+      <div class="shop-name">${item.name}<br><span style="color:var(--text2);font-size:11px">${item.amount}</span></div>
+      <div class="shop-price">${item.currency==='real' ? item.price : item.currency==='crystals' ? `💎${item.price}` : `🪙${item.price}`}</div>
+    </div>`).join('');
+}
+
+function filterShop(category, el) {
+  document.querySelectorAll('.shop-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('shop-grid').innerHTML = shopItemsHTML(category);
+}
+
+function buyShopItem(name, currency, price) {
+  if (currency === 'real') { showNotif('💳 Переход к оплате...', 'success'); return; }
+  if (currency === 'crystals' && GS.player.crystals < price) { showNotif('Недостаточно 💎 кристаллов!', 'danger'); return; }
+  if (currency === 'coins' && GS.player.coins < price) { showNotif('Недостаточно 🪙 монет!', 'danger'); return; }
+
+  if (currency === 'crystals') GS.player.crystals -= price;
+  if (currency === 'coins') GS.player.coins -= price;
+
+  // Apply purchase
+  if (name.includes('дерева')) GS.player.wood += 150;
+  if (name.includes('камня')) GS.player.stone += 100;
+  if (name.includes('Металлолом')) GS.player.metal += 50;
+  if (name.includes('еды')) GS.player.food += 80;
+  if (name.includes('энергии')) { GS.player.energy = Math.min(GS.player.energyMax, GS.player.energy + 10); updateEnergyUI(); }
+  if (name.includes('выжившего') && name.includes('Слот')) {
+    showNotif('Слот выжившего открыт!', 'rare');
+  }
+  if (name.includes('Призыв')) {
+    recruitRandomSurvivor();
+  }
+
+  showNotif(`✅ Куплено: ${name}`, 'success');
+  updateHUD();
+}
+
+// ============================================================
+// SURVIVOR RECRUIT
+// ============================================================
+function recruitRandomSurvivor() {
+  const rarityRoll = Math.random();
+  let rarity;
+  if (rarityRoll < 0.5) rarity = 'common';
+  else if (rarityRoll < 0.8) rarity = 'rare';
+  else if (rarityRoll < 0.95) rarity = 'epic';
+  else rarity = 'legendary';
+
+  const archetypes = SURVIVOR_ARCHETYPES.filter(a => a.rarity === rarity);
+  const arch = archetypes[Math.floor(Math.random() * archetypes.length)] || SURVIVOR_ARCHETYPES[0];
+
+  const s = {
+    ...arch,
+    id: 'surv_' + Date.now(),
+    level: 1, xp: 0, xpNext: 80,
+    hp: arch.hp, maxHp: arch.hp,
+    busy: false, busyTile: null, busyLabel: null
+  };
+  GS.survivors.push(s);
+
+  const rarityColors = { common:'var(--common)', rare:'var(--rare)', epic:'var(--epic)', legendary:'var(--legendary)' };
+  showNotif(`🎉 Получен ${s.emoji} ${s.name} [${s.rarity.toUpperCase()}]!`, 'rare');
+  updateSurvivorsUI();
+  return s;
+}
+
+// ============================================================
+// PASSIVE RESOURCES (buildings)
+// ============================================================
+function processPassiveBuildings() {
+  const bldBonuses = {
+    farm: { food: 0.5 },
+    sawmill: { wood: 0.3 },
+    quarry: { stone: 0.3 },
+    smelter: { metal: 0.2 },
+  };
+
+  Object.entries(bldBonuses).forEach(([key, bonus]) => {
+    const bld = GS.buildings[key];
+    if (bld && bld.level > 0) {
+      Object.entries(bonus).forEach(([res, rate]) => {
+        GS.player[res] = (GS.player[res]||0) + rate * bld.level;
+      });
+    }
+  });
+
+  updateHUD();
+}
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+let lastPassive = Date.now();
+
+function gameLoop() {
+  drawGame();
+  updateEnergy();
+
+  const now = Date.now();
+  if (now - lastPassive > 5000) {
+    processPassiveBuildings();
+    lastPassive = now;
+  }
+
+  // Check mining completions
+  Object.entries(GS.activeMines).forEach(([tileId, mine]) => {
+    if (Date.now() >= mine.endTime) {
+      const tile = GS.map.tiles.find(t => t.id === tileId);
+      const surv = GS.survivors.find(s => s.id === mine.survivorId);
+      if (tile && surv) completeMine(tile, surv);
+    }
+  });
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function startGame() {
+  document.getElementById('splash').style.display = 'none';
+
+  resizeCanvas();
+  window.addEventListener('resize', () => { resizeCanvas(); });
+
+  generateMap();
+
+  // Init starting survivors
+  const starterArchs = [SURVIVOR_ARCHETYPES[0], SURVIVOR_ARCHETYPES[3]];
+  starterArchs.forEach(arch => {
+    GS.survivors.push({
+      ...arch,
+      id: 'surv_' + Math.random().toString(36).substr(2,9),
+      level: 1, xp: 0, xpNext: 80,
+      hp: arch.hp, maxHp: arch.hp,
+      busy: false, busyTile: null, busyLabel: null
+    });
+  });
+
+  // Init buildings
+  Object.keys(BUILDING_DEFS).forEach(key => {
+    GS.buildings[key] = { level: 0, upgrading: false };
+  });
+  GS.buildings.hq = { level: 1, upgrading: false };
+
+  // Give starter resources
+  GS.player.wood = 30;
+  GS.player.stone = 20;
+
+  updateHUD();
+  gameLoop();
+
+  // Telegram WebApp integration
+  try {
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
+      if (tg.colorScheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      const userData = tg.initDataUnsafe?.user;
+      if (userData) {
+        GS.player.name = userData.first_name || 'Survivor';
+        document.getElementById('player-level').title = GS.player.name;
+      }
+      tg.BackButton.onClick(() => { if(GS.currentTab!=='map') switchTab('map'); });
+    }
+  } catch(e) { /* Not in Telegram */ }
+
+  // Welcome notification
+  setTimeout(() => showNotif('🎮 Нажми на тайл рядом с тобой чтобы начать!', 'success'), 500);
+  setTimeout(() => showNotif('⚡ Энергия нужна для разведки новых зон', 'success'), 2500);
+}
+
+// Make sure canvas is right size before start
+window.addEventListener('load', () => {
+  resizeCanvas();
+});
 </script>
 </body>
 </html>
