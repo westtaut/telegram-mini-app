@@ -1770,14 +1770,207 @@ function evShop(){G.tokens+=5;toast('🎃 +5 EventTokens!');}
 let pvpS=6*3600+12*60+44,evS=2*86400+14*3600+32*60+8;
 function tickTimers(){pvpS=Math.max(0,pvpS-1);evS=Math.max(0,evS-1);const pe=document.getElementById('pvpTmr');if(pe){const h=Math.floor(pvpS/3600),m=Math.floor(pvpS%3600/60),s=pvpS%60;pe.textContent=h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');}const ee=document.getElementById('evTmr');if(ee){const d=Math.floor(evS/86400),h=Math.floor(evS%86400/3600),m=Math.floor(evS%3600/60),s=evS%60;ee.textContent=d+'д '+h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');}}
 
+// ══════════════════════════════════════════
+// 🌐 SERVER SYNC
+// ══════════════════════════════════════════
+// ⚠️ ЗАМЕНИТЕ на ваш Railway URL:
+const SERVER_URL = 'https://YOUR-APP.railway.app';
+
+// Получаем initData от Telegram WebApp
+function getInitData(){
+  try{
+    if(window.Telegram&&window.Telegram.WebApp&&window.Telegram.WebApp.initData){
+      return window.Telegram.WebApp.initData;
+    }
+  }catch(e){}
+  return '';
+}
+
+// Собираем всё состояние для отправки
+function buildSyncPayload(){
+  return {
+    initData: getInitData(),
+    gameState:{
+      coins:       G.coins,
+      gems:        G.gems,
+      level:       G.clvl,
+      xp:          G.cxp,
+      totalEarned: G.totalEarned,
+      presLvl:     G.presLvl,
+      presMult:    G.presMult,
+      ppaws:       G.ppaws,
+      rep:         G.rep,
+      tokens:      G.tokens,
+      streak:      G.streak,
+      ciToday:     G.ciToday,
+      pE:          G.pE,
+      pL:          G.pL,
+      bpPrem:      G.bpPrem,
+      bpProg:      G.bpProg,
+      lastOnline:  G.lastOnline,
+    },
+    buildings:   BS,
+    cats:        CATS.map(c=>({id:c.id,owned:c.owned,fr:c.fr})),
+    missions:    MISS.map(m=>({id:m.id,cur:m.cur,done:m.done})),
+    achievements:ACHS.map(a=>({un:a.un})),
+    completedQuests:[],
+  };
+}
+
+// Сохранить на сервер
+let _syncBusy=false;
+async function saveToServer(silent=true){
+  if(_syncBusy||!SERVER_URL||SERVER_URL.includes('YOUR-APP'))return;
+  _syncBusy=true;
+  try{
+    const r=await fetch(SERVER_URL+'/api/sync',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(buildSyncPayload()),
+    });
+    if(!r.ok&&!silent)toast('⚠️ Ошибка сохранения: '+r.status);
+    else if(!silent)toast('✅ Прогресс сохранён!');
+  }catch(e){
+    if(!silent)toast('⚠️ Нет связи с сервером');
+    console.warn('Sync error:',e);
+  }finally{_syncBusy=false;}
+}
+
+// Загрузить с сервера
+async function loadFromServer(){
+  if(!SERVER_URL||SERVER_URL.includes('YOUR-APP'))return false;
+  const initData=getInitData();
+  if(!initData){
+    // Без Telegram — пробуем localStorage как fallback
+    loadLocal();
+    return false;
+  }
+  try{
+    const r=await fetch(SERVER_URL+'/api/load',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({initData}),
+    });
+    if(!r.ok)return false;
+    const data=await r.json();
+    if(!data.success)return false;
+
+    const gs=data.gameState||{};
+    // Применяем загруженное состояние
+    if(gs.coins!==undefined)    G.coins       =gs.coins;
+    if(gs.gems!==undefined)     G.gems        =gs.gems;
+    if(gs.level!==undefined)    G.clvl        =gs.level;
+    if(gs.xp!==undefined)       G.cxp         =gs.xp;
+    if(gs.totalEarned!==undefined)G.totalEarned=gs.totalEarned;
+    if(gs.presLvl!==undefined)  G.presLvl     =gs.presLvl;
+    if(gs.presMult!==undefined) G.presMult    =gs.presMult;
+    if(gs.ppaws!==undefined)    G.ppaws       =gs.ppaws;
+    if(gs.rep!==undefined)      G.rep         =gs.rep;
+    if(gs.tokens!==undefined)   G.tokens      =gs.tokens;
+    if(gs.streak!==undefined)   G.streak      =gs.streak;
+    if(gs.ciToday!==undefined)  G.ciToday     =gs.ciToday;
+    if(gs.pE!==undefined)       G.pE          =gs.pE;
+    if(gs.pL!==undefined)       G.pL          =gs.pL;
+    if(gs.bpPrem!==undefined)   G.bpPrem      =gs.bpPrem;
+    if(gs.bpProg!==undefined)   G.bpProg      =gs.bpProg;
+    if(gs.lastOnline)           G.lastOnline  =new Date(gs.lastOnline).getTime();
+
+    // Здания
+    if(data.buildings){
+      Object.keys(data.buildings).forEach(id=>{
+        if(BS[id])BS[id]=data.buildings[id];
+      });
+    }
+
+    // Коты
+    if(data.cats&&Array.isArray(data.cats)){
+      data.cats.forEach(sc=>{
+        const cat=CATS.find(c=>c.id===sc.id);
+        if(cat){cat.owned=sc.owned;cat.fr=sc.fr||0;}
+      });
+    }
+
+    // Миссии
+    if(data.missions&&Array.isArray(data.missions)){
+      data.missions.forEach(sm=>{
+        const m=MISS.find(x=>x.id===sm.id);
+        if(m){m.cur=sm.cur;m.done=sm.done;}
+      });
+    }
+
+    // Достижения
+    if(data.achievements&&Array.isArray(data.achievements)){
+      data.achievements.forEach((sa,i)=>{if(ACHS[i])ACHS[i].un=sa.un;});
+    }
+
+    console.log('✓ Loaded from server');
+    return true;
+  }catch(e){
+    console.warn('Load error:',e);
+    loadLocal();
+    return false;
+  }
+}
+
+// ── LocalStorage fallback ──
+function saveLocal(){
+  try{
+    const payload=buildSyncPayload();
+    delete payload.initData;
+    localStorage.setItem('ce_save',JSON.stringify(payload));
+  }catch(e){}
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('ce_save');
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    const gs=data.gameState||{};
+    if(gs.coins!==undefined)G.coins=gs.coins;
+    if(gs.gems!==undefined)G.gems=gs.gems;
+    if(gs.level!==undefined)G.clvl=gs.level;
+    if(gs.xp!==undefined)G.cxp=gs.xp;
+    if(gs.totalEarned!==undefined)G.totalEarned=gs.totalEarned;
+    if(gs.presLvl!==undefined)G.presLvl=gs.presLvl;
+    if(gs.presMult!==undefined)G.presMult=gs.presMult;
+    if(gs.ppaws!==undefined)G.ppaws=gs.ppaws;
+    if(gs.rep!==undefined)G.rep=gs.rep;
+    if(gs.tokens!==undefined)G.tokens=gs.tokens;
+    if(gs.streak!==undefined)G.streak=gs.streak;
+    if(gs.ciToday!==undefined)G.ciToday=gs.ciToday;
+    if(gs.pE!==undefined)G.pE=gs.pE;
+    if(gs.pL!==undefined)G.pL=gs.pL;
+    if(gs.lastOnline)G.lastOnline=gs.lastOnline;
+    if(data.buildings)Object.keys(data.buildings).forEach(id=>{if(BS[id])BS[id]=data.buildings[id];});
+    if(data.cats)data.cats.forEach(sc=>{const c=CATS.find(x=>x.id===sc.id);if(c){c.owned=sc.owned;c.fr=sc.fr||0;}});
+    if(data.missions)data.missions.forEach(sm=>{const m=MISS.find(x=>x.id===sm.id);if(m){m.cur=sm.cur;m.done=sm.done;}});
+    console.log('✓ Loaded from localStorage');
+  }catch(e){console.warn('LocalStorage load error:',e);}
+}
+
+// ══════════════════════════════════════════
 function init(){
   const sc=document.getElementById('stars');
   for(let i=0;i<80;i++){const s=document.createElement('div'),sz=Math.random()*2+.8;s.className='star';s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:${.2+Math.random()*.6};--d:${1+Math.random()*3}s;--dl:${Math.random()*3}s;`;sc.appendChild(s);}
-  renderBlds();renderCity();
-  setInterval(tick,100);setInterval(tickTimers,1000);
-  setInterval(()=>{if(G.totalEarned>=1000000&&!ACHS[1].un){ACHS[1].un=true;G.gems+=50;toast('🌟 Достижение: Молодой магнат! +50 💎');}},3000);
-  setTimeout(()=>toast('🎮 Нажми на любую карточку здания — откроется мини-игра!'),900);
-  setTimeout(showOffline,3500);
+
+  // Загружаем прогресс с сервера (или localStorage), потом запускаем игру
+  loadFromServer().then(loaded=>{
+    renderBlds();renderCity();
+    setInterval(tick,100);setInterval(tickTimers,1000);
+    // Автосохранение каждые 30 секунд
+    setInterval(()=>{saveToServer();saveLocal();},30000);
+    setInterval(()=>{if(G.totalEarned>=1000000&&!ACHS[1].un){ACHS[1].un=true;G.gems+=50;toast('🌟 Достижение: Молодой магнат! +50 💎');}},3000);
+    if(loaded)setTimeout(()=>toast('☁️ Прогресс загружен!'),600);
+    setTimeout(()=>toast('🎮 Нажми на любую карточку здания — откроется мини-игра!'),loaded?1600:900);
+    setTimeout(showOffline,3500);
+  });
+
+  // Сохраняем при закрытии
+  window.addEventListener('beforeunload',()=>{saveLocal();});
+  if(window.Telegram&&window.Telegram.WebApp){
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
 }
 document.addEventListener('DOMContentLoaded',init);
 </script>
