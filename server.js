@@ -36,6 +36,44 @@ app.get('/health', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ status: 'Cat Empire Server running 🐱' });
 });
+// DEBUG — помогает диагностировать проблемы с initData
+app.post('/api/debug', async (req, res) => {
+  const { initData } = req.body || {};
+  const hasToken = !!TELEGRAM_BOT_TOKEN;
+  const initLen = (initData || '').length;
+
+  let verifyResult = 'skipped';
+  let userId = null;
+  let verifyError = null;
+
+  if (initData) {
+    try {
+      const ok = await verifyTelegramData(initData);
+      verifyResult = ok ? 'ok' : 'failed';
+      if (ok) {
+        const tgData = parseTelegramData(initData);
+        userId = tgData.userId;
+      }
+    } catch(e) {
+      verifyError = e.message;
+    }
+  }
+
+  res.json({
+    server: 'ok',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    hasToken,
+    initDataLength: initLen,
+    verifyResult,
+    userId,
+    verifyError,
+    tip: !hasToken ? 'Set TELEGRAM_BOT_TOKEN in Railway variables' :
+         verifyResult === 'failed' ? 'Token mismatch - check TELEGRAM_BOT_TOKEN value' :
+         'All good!',
+  });
+});
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // DATABASE SCHEMA
@@ -95,29 +133,45 @@ const GameState = mongoose.model('GameState', gameStateSchema);
 // TELEGRAM VERIFICATION
 // ═══════════════════════════════════════════════════════════════
 async function verifyTelegramData(initData) {
-  // В dev-режиме (нет токена) — пропускаем проверку
   if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'dev') {
-    console.warn('⚠️  Telegram verification SKIPPED (no token)');
+    console.warn('WARN: Telegram verification SKIPPED (no token set)');
     return true;
+  }
+  if (!initData || typeof initData !== 'string' || initData.length < 10) {
+    console.warn('WARN: initData empty, length=' + (initData||'').length);
+    return false;
   }
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
-    if (!hash) return false;
+    if (!hash) {
+      console.warn('WARN: no hash in initData, keys: ' + [...params.keys()].join(','));
+      return false;
+    }
     params.delete('hash');
 
     const dataCheckString = Array.from(params.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
+      .map(([k, v]) => k + '=' + v)
       .join('\n');
 
     const crypto = require('crypto');
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_BOT_TOKEN).digest();
-    const checkHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+    const secretKey = crypto.createHmac('sha256', 'WebAppData')
+      .update(TELEGRAM_BOT_TOKEN).digest();
+    const checkHash = crypto.createHmac('sha256', secretKey)
+      .update(dataCheckString).digest('hex');
 
-    return checkHash === hash;
+    const ok = checkHash === hash;
+    if (!ok) {
+      console.warn('WARN: hash mismatch - wrong TELEGRAM_BOT_TOKEN?');
+      console.warn('  got:      ' + hash.slice(0,20) + '...');
+      console.warn('  computed: ' + checkHash.slice(0,20) + '...');
+    } else {
+      console.log('OK: verify passed, keys: ' + [...params.keys()].join(','));
+    }
+    return ok;
   } catch (e) {
-    console.error('Telegram verification error:', e);
+    console.error('verify exception:', e.message);
     return false;
   }
 }
