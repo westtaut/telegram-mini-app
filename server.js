@@ -20,6 +20,24 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+// sendBeacon отправляет JSON с Content-Type: text/plain
+// Этот middleware парсит его как JSON
+app.use((req, res, next) => {
+  if (req.method === 'POST' &&
+      req.headers['content-type'] &&
+      req.headers['content-type'].includes('text/plain') &&
+      !req.body) {
+    let raw = '';
+    req.on('data', chunk => { raw += chunk; });
+    req.on('end', () => {
+      try { req.body = JSON.parse(raw); } catch(e) { req.body = {}; }
+      next();
+    });
+  } else {
+    next();
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // HEALTH CHECK — обязательно для Railway
 // ═══════════════════════════════════════════════════════════════
