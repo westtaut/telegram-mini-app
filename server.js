@@ -1,12 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 // CAT EMPIRE - TELEGRAM MINI APP BACKEND
 // ═══════════════════════════════════════════════════════════════
-// npm install express cors body-parser axios dotenv mongoose
 
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const axios = require('axios');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
@@ -19,56 +17,76 @@ const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/cat-empire
 // MIDDLEWARE
 // ═══════════════════════════════════════════════════════════════
 app.use(cors());
-app.use(bodyParser.json({limit:'50mb'}));
-app.use(bodyParser.urlencoded({limit:'50mb',extended:true}));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+
+// ═══════════════════════════════════════════════════════════════
+// HEALTH CHECK — обязательно для Railway
+// ═══════════════════════════════════════════════════════════════
+app.get('/health', (req, res) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.status(200).json({
+    status: 'ok',
+    db: dbStatus,
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get('/', (req, res) => {
+  res.json({ status: 'Cat Empire Server running 🐱' });
+});
 
 // ═══════════════════════════════════════════════════════════════
 // DATABASE SCHEMA
 // ═══════════════════════════════════════════════════════════════
 const gameStateSchema = new mongoose.Schema({
-  userId: {type:Number, required:true, unique:true},
-  username: String,
-  firstName: String,
-  lastName: String,
-  isPremium: Boolean,
-  
-  // Game progress
-  coins: {type:Number, default:150},
-  gems: {type:Number, default:50},
-  level: {type:Number, default:1},
-  xp: {type:Number, default:0},
-  totalEarned: {type:Number, default:0},
-  
-  // Buildings progress
-  buildings: {
-    fish: {lvl:Number, mgr:Boolean},
-    cafe: {lvl:Number, mgr:Boolean},
-    neon: {lvl:Number, mgr:Boolean},
-    gym: {lvl:Number, mgr:Boolean},
-    mem: {lvl:Number, mgr:Boolean},
-    arena: {lvl:Number, mgr:Boolean},
-    verse: {lvl:Number, mgr:Boolean},
-    bank: {lvl:Number, mgr:Boolean},
-  },
-  
-  // Customization
+  userId:    { type: Number, required: true, unique: true, index: true },
+  username:  { type: String, default: '' },
+  firstName: { type: String, default: '' },
+  lastName:  { type: String, default: '' },
+  isPremium: { type: Boolean, default: false },
+
+  // Валюта и прогресс
+  coins:        { type: Number, default: 150 },
+  gems:         { type: Number, default: 50 },
+  level:        { type: Number, default: 1 },
+  xp:           { type: Number, default: 0 },
+  totalEarned:  { type: Number, default: 0 },
+  presLvl:      { type: Number, default: 0 },
+  presMult:     { type: Number, default: 1 },
+  ppaws:        { type: Number, default: 0 },
+  rep:          { type: Number, default: 0 },
+  tokens:       { type: Number, default: 0 },
+  streak:       { type: Number, default: 0 },
+  ciToday:      { type: Boolean, default: false },
+  pE:           { type: Number, default: 0 },
+  pL:           { type: Number, default: 0 },
+  bpPrem:       { type: Boolean, default: false },
+  bpProg:       { type: Number, default: 0 },
+
+  // Здания — используем Mixed для гибкости
+  buildings: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // Коты
+  cats: { type: mongoose.Schema.Types.Mixed, default: [] },
+
+  // Кастомизация
   customizations: {
-    avatar: {type:String, default:'😸'},
-    skin: {type:String, default:'default'},
-    badge: String,
+    avatar: { type: String, default: '😸' },
+    skin:   { type: String, default: 'default' },
+    badge:  { type: String, default: '' },
   },
-  
-  // Event progress
-  completedQuests: [String],
-  eventProgress: {
-    currentEventId: String,
-    questsProgress: mongoose.Schema.Types.Mixed,
-  },
-  
-  // Meta
-  createdAt: {type:Date, default:Date.now},
-  updatedAt: {type:Date, default:Date.now},
-  lastOnline: {type:Date, default:Date.now},
+
+  // Квесты и достижения
+  completedQuests: { type: [String], default: [] },
+  missions:        { type: mongoose.Schema.Types.Mixed, default: [] },
+  achievements:    { type: mongoose.Schema.Types.Mixed, default: [] },
+
+  // Мета
+  createdAt:  { type: Date, default: Date.now },
+  updatedAt:  { type: Date, default: Date.now },
+  lastOnline: { type: Date, default: Date.now },
 });
 
 const GameState = mongoose.model('GameState', gameStateSchema);
@@ -76,303 +94,354 @@ const GameState = mongoose.model('GameState', gameStateSchema);
 // ═══════════════════════════════════════════════════════════════
 // TELEGRAM VERIFICATION
 // ═══════════════════════════════════════════════════════════════
-async function verifyTelegramData(initData){
-  try{
+async function verifyTelegramData(initData) {
+  // В dev-режиме (нет токена) — пропускаем проверку
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_BOT_TOKEN === 'dev') {
+    console.warn('⚠️  Telegram verification SKIPPED (no token)');
+    return true;
+  }
+  try {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
+    if (!hash) return false;
     params.delete('hash');
-    
+
     const dataCheckString = Array.from(params.entries())
-      .sort(([a],[b])=>a.localeCompare(b))
-      .map(([k,v])=>`${k}=${v}`)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
       .join('\n');
-    
+
     const crypto = require('crypto');
     const secretKey = crypto.createHmac('sha256', 'WebAppData').update(TELEGRAM_BOT_TOKEN).digest();
     const checkHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-    
+
     return checkHash === hash;
-  }catch(e){
+  } catch (e) {
     console.error('Telegram verification error:', e);
     return false;
   }
 }
 
-function parseTelegramData(initData){
-  const params = new URLSearchParams(initData);
-  const user = JSON.parse(params.get('user')||'{}');
-  return {userId:user.id, username:user.username, ...user};
+function parseTelegramData(initData) {
+  try {
+    const params = new URLSearchParams(initData);
+    const user = JSON.parse(params.get('user') || '{}');
+    return { userId: user.id, username: user.username || '', ...user };
+  } catch (e) {
+    // Fallback для тестирования без Telegram
+    return { userId: 0, username: 'test_user' };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function defaultBuildings() {
+  return {
+    fish:  { lvl: 1, mgr: false },
+    cafe:  { lvl: 1, mgr: false },
+    neon:  { lvl: 0, mgr: false },
+    gym:   { lvl: 0, mgr: false },
+    mem:   { lvl: 0, mgr: false },
+    arena: { lvl: 0, mgr: false },
+    verse: { lvl: 0, mgr: false },
+    bank:  { lvl: 0, mgr: false },
+  };
+}
+
+// Антихит: монеты не могут резко вырасти (>24ч дохода = подозрительно)
+function sanitizeCoins(newCoins, oldCoins) {
+  const MAX_DELTA = 1e12; // разумный лимит
+  if (typeof newCoins !== 'number' || isNaN(newCoins)) return oldCoins;
+  if (newCoins < 0) return 0;
+  if (newCoins - oldCoins > MAX_DELTA) {
+    console.warn(`⚠️  Suspicious coin jump: ${oldCoins} → ${newCoins}`);
+    return oldCoins + MAX_DELTA;
+  }
+  return newCoins;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // API ENDPOINTS
 // ═══════════════════════════════════════════════════════════════
 
-// SYNC - Save player progress
-app.post('/api/sync', async(req,res)=>{
-  try{
-    const {initData, gameState, buildings, customizations, completedQuests} = req.body;
-    
-    // Verify Telegram data
+// SYNC — сохранить прогресс
+app.post('/api/sync', async (req, res) => {
+  try {
+    const { initData, gameState, buildings, cats, customizations, completedQuests, missions, achievements } = req.body;
+
+    if (!initData) return res.status(400).json({ error: 'initData required' });
+
     const isValid = await verifyTelegramData(initData);
-    if(!isValid){
-      return res.status(401).json({error:'Invalid telegram data'});
-    }
-    
+    if (!isValid) return res.status(401).json({ error: 'Invalid telegram data' });
+
     const tgData = parseTelegramData(initData);
     const userId = tgData.userId;
-    
-    // Update or create game state
+    if (!userId) return res.status(400).json({ error: 'userId missing' });
+
+    // Берём старое состояние для санитизации
+    const existing = await GameState.findOne({ userId });
+    const oldCoins = existing ? existing.coins : 150;
+
+    const updateData = {
+      username:  tgData.username   || existing?.username   || '',
+      firstName: tgData.first_name || existing?.firstName  || '',
+      lastName:  tgData.last_name  || existing?.lastName   || '',
+      isPremium: tgData.is_premium || false,
+
+      coins:       sanitizeCoins(gameState?.coins, oldCoins),
+      gems:        typeof gameState?.gems === 'number'        ? Math.max(0, gameState.gems)        : (existing?.gems        ?? 50),
+      level:       typeof gameState?.level === 'number'       ? Math.max(1, gameState.level)       : (existing?.level       ?? 1),
+      xp:          typeof gameState?.xp === 'number'          ? Math.max(0, gameState.xp)          : (existing?.xp          ?? 0),
+      totalEarned: typeof gameState?.totalEarned === 'number' ? gameState.totalEarned              : (existing?.totalEarned ?? 0),
+      presLvl:     typeof gameState?.presLvl === 'number'     ? gameState.presLvl                 : (existing?.presLvl     ?? 0),
+      presMult:    typeof gameState?.presMult === 'number'    ? gameState.presMult                : (existing?.presMult    ?? 1),
+      ppaws:       typeof gameState?.ppaws === 'number'       ? gameState.ppaws                   : (existing?.ppaws       ?? 0),
+      rep:         typeof gameState?.rep === 'number'         ? gameState.rep                     : (existing?.rep         ?? 0),
+      tokens:      typeof gameState?.tokens === 'number'      ? gameState.tokens                  : (existing?.tokens      ?? 0),
+      streak:      typeof gameState?.streak === 'number'      ? gameState.streak                  : (existing?.streak      ?? 0),
+      ciToday:     typeof gameState?.ciToday === 'boolean'    ? gameState.ciToday                 : (existing?.ciToday     ?? false),
+      pE:          typeof gameState?.pE === 'number'          ? gameState.pE                      : (existing?.pE          ?? 0),
+      pL:          typeof gameState?.pL === 'number'          ? gameState.pL                      : (existing?.pL          ?? 0),
+      bpPrem:      typeof gameState?.bpPrem === 'boolean'     ? gameState.bpPrem                  : (existing?.bpPrem      ?? false),
+      bpProg:      typeof gameState?.bpProg === 'number'      ? gameState.bpProg                  : (existing?.bpProg      ?? 0),
+
+      buildings:       buildings       || existing?.buildings       || defaultBuildings(),
+      cats:            cats            || existing?.cats            || [],
+      customizations:  customizations  || existing?.customizations  || {},
+      completedQuests: completedQuests || existing?.completedQuests || [],
+      missions:        missions        || existing?.missions        || [],
+      achievements:    achievements    || existing?.achievements    || [],
+
+      lastOnline: new Date(),
+      updatedAt:  new Date(),
+    };
+
     const state = await GameState.findOneAndUpdate(
-      {userId},
-      {
-        username: tgData.username,
-        firstName: tgData.first_name,
-        lastName: tgData.last_name,
-        isPremium: tgData.is_premium,
-        coins: gameState.coins,
-        gems: gameState.gems,
-        level: gameState.level,
-        xp: gameState.xp,
-        buildings,
-        customizations,
-        completedQuests,
-        lastOnline: new Date(),
-        updatedAt: new Date(),
-      },
-      {upsert:true, new:true}
+      { userId },
+      { $set: updateData },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    
-    console.log(`✓ Synced ${tgData.username} (ID: ${userId})`);
-    res.json({success:true, userId, data:state});
-    
-  }catch(err){
+
+    console.log(`✓ Synced user ${tgData.username || userId} — coins: ${updateData.coins}`);
+    res.json({ success: true, userId });
+
+  } catch (err) {
     console.error('Sync error:', err);
-    res.status(500).json({error:err.message});
+    res.status(500).json({ error: 'Server error', detail: err.message });
   }
 });
 
-// LOAD - Get player progress
-app.post('/api/load', async(req,res)=>{
-  try{
-    const {initData} = req.body;
-    
+// LOAD — загрузить прогресс
+app.post('/api/load', async (req, res) => {
+  try {
+    const { initData } = req.body;
+
+    if (!initData) return res.status(400).json({ error: 'initData required' });
+
     const isValid = await verifyTelegramData(initData);
-    if(!isValid){
-      return res.status(401).json({error:'Invalid telegram data'});
-    }
-    
+    if (!isValid) return res.status(401).json({ error: 'Invalid telegram data' });
+
     const tgData = parseTelegramData(initData);
     const userId = tgData.userId;
-    
-    let state = await GameState.findOne({userId});
-    
-    if(!state){
-      // Create new player
-      state = new GameState({
+    if (!userId) return res.status(400).json({ error: 'userId missing' });
+
+    let state = await GameState.findOne({ userId });
+
+    if (!state) {
+      // Новый игрок
+      state = await GameState.create({
         userId,
-        username: tgData.username,
-        firstName: tgData.first_name,
-        lastName: tgData.last_name,
-        isPremium: tgData.is_premium,
-        buildings: {
-          fish:{lvl:1,mgr:false},
-          cafe:{lvl:1,mgr:false},
-          neon:{lvl:0,mgr:false},
-          gym:{lvl:0,mgr:false},
-          mem:{lvl:0,mgr:false},
-          arena:{lvl:0,mgr:false},
-          verse:{lvl:0,mgr:false},
-          bank:{lvl:0,mgr:false},
-        }
+        username:  tgData.username   || '',
+        firstName: tgData.first_name || '',
+        lastName:  tgData.last_name  || '',
+        isPremium: tgData.is_premium || false,
+        buildings: defaultBuildings(),
       });
-      await state.save();
-      console.log(`→ Created new player: ${tgData.username} (ID: ${userId})`);
+      console.log(`→ New player: ${tgData.username || userId}`);
+    } else {
+      // Обновляем lastOnline
+      await GameState.updateOne({ userId }, { $set: { lastOnline: new Date() } });
     }
-    
-    const gameState = {
-      userId: state.userId,
-      username: state.username,
-      coins: state.coins,
-      gems: state.gems,
-      level: state.level,
-      xp: state.xp,
-      customizations: state.customizations,
-    };
-    
+
     res.json({
-      success:true,
-      gameState,
-      buildings:state.buildings,
-      customizations:state.customizations,
-      completedQuests:state.completedQuests,
+      success: true,
+      gameState: {
+        userId:      state.userId,
+        username:    state.username,
+        coins:       state.coins,
+        gems:        state.gems,
+        level:       state.level,
+        xp:          state.xp,
+        totalEarned: state.totalEarned,
+        presLvl:     state.presLvl,
+        presMult:    state.presMult,
+        ppaws:       state.ppaws,
+        rep:         state.rep,
+        tokens:      state.tokens,
+        streak:      state.streak,
+        ciToday:     state.ciToday,
+        pE:          state.pE,
+        pL:          state.pL,
+        bpPrem:      state.bpPrem,
+        bpProg:      state.bpProg,
+        lastOnline:  state.lastOnline,
+      },
+      buildings:       state.buildings       || defaultBuildings(),
+      cats:            state.cats            || [],
+      customizations:  state.customizations  || {},
+      completedQuests: state.completedQuests || [],
+      missions:        state.missions        || [],
+      achievements:    state.achievements    || [],
     });
-    
-  }catch(err){
+
+  } catch (err) {
     console.error('Load error:', err);
-    res.status(500).json({error:err.message});
+    res.status(500).json({ error: 'Server error', detail: err.message });
   }
 });
 
-// GET LEADERBOARD
-app.get('/api/leaderboard', async(req,res)=>{
-  try{
-    const limit = parseInt(req.query.limit) || 50;
-    
-    const leaders = await GameState.find()
-      .sort({level:-1, totalEarned:-1})
+// LEADERBOARD
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const leaders = await GameState.find({}, 'userId username level coins totalEarned')
+      .sort({ totalEarned: -1, level: -1 })
       .limit(limit)
-      .select('userId username level coins gems totalEarned');
-    
-    const formatted = leaders.map((p,i)=>({
-      rank: i+1,
-      userId: p.userId,
-      username: p.username,
-      level: p.level,
-      coins: p.coins,
-      totalEarned: p.totalEarned,
-    }));
-    
-    res.json({success:true, data:formatted});
-    
-  }catch(err){
+      .lean();
+
+    res.json({
+      success: true,
+      data: leaders.map((p, i) => ({
+        rank:        i + 1,
+        userId:      p.userId,
+        username:    p.username || 'Unknown',
+        level:       p.level,
+        coins:       p.coins,
+        totalEarned: p.totalEarned,
+      })),
+    });
+  } catch (err) {
     console.error('Leaderboard error:', err);
-    res.status(500).json({error:err.message});
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// GET PLAYER STATS
-app.post('/api/stats', async(req,res)=>{
-  try{
-    const {initData} = req.body;
+// STATS
+app.post('/api/stats', async (req, res) => {
+  try {
+    const { initData } = req.body;
     const isValid = await verifyTelegramData(initData);
-    if(!isValid) return res.status(401).json({error:'Invalid telegram data'});
-    
-    const tgData = parseTelegramData(initData);
-    const state = await GameState.findOne({userId:tgData.userId});
-    
-    if(!state) return res.status(404).json({error:'Player not found'});
-    
-    const stats = {
-      level: state.level,
-      coins: state.coins,
-      gems: state.gems,
-      totalEarned: state.totalEarned,
-      buildingsCount: Object.values(state.buildings).filter(b=>b.lvl>0).length,
-      completedQuests: state.completedQuests.length,
-      lastOnline: state.lastOnline,
-      createdAt: state.createdAt,
-    };
-    
-    res.json({success:true, stats});
-    
-  }catch(err){
-    res.status(500).json({error:err.message});
-  }
-});
+    if (!isValid) return res.status(401).json({ error: 'Invalid telegram data' });
 
-// CLAIM EVENT REWARD
-app.post('/api/claim-reward', async(req,res)=>{
-  try{
-    const {initData, rewardId} = req.body;
-    const isValid = await verifyTelegramData(initData);
-    if(!isValid) return res.status(401).json({error:'Invalid telegram data'});
-    
     const tgData = parseTelegramData(initData);
-    const state = await GameState.findOne({userId:tgData.userId});
-    
-    if(!state) return res.status(404).json({error:'Player not found'});
-    
-    // Add reward logic here
-    state.gems += 50; // Example reward
-    state.updatedAt = new Date();
-    await state.save();
-    
-    res.json({success:true, message:'Reward claimed'});
-    
-  }catch(err){
-    res.status(500).json({error:err.message});
+    const state = await GameState.findOne({ userId: tgData.userId }).lean();
+    if (!state) return res.status(404).json({ error: 'Player not found' });
+
+    const buildings = state.buildings || {};
+    res.json({
+      success: true,
+      stats: {
+        level:           state.level,
+        coins:           state.coins,
+        gems:            state.gems,
+        totalEarned:     state.totalEarned,
+        buildingsCount:  Object.values(buildings).filter(b => b && b.lvl > 0).length,
+        completedQuests: (state.completedQuests || []).length,
+        lastOnline:      state.lastOnline,
+        createdAt:       state.createdAt,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
 // ═══════════════════════════════════════════════════════════════
 // ADMIN ENDPOINTS
 // ═══════════════════════════════════════════════════════════════
+function checkAdmin(req, res) {
+  const adminKey = req.headers['x-admin-key'];
+  if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return false;
+  }
+  return true;
+}
 
-// Get all players
-app.get('/admin/players', async(req,res)=>{
-  try{
-    const adminKey = req.headers['x-admin-key'];
-    if(adminKey !== process.env.ADMIN_KEY){
-      return res.status(401).json({error:'Unauthorized'});
-    }
-    
-    const players = await GameState.find().limit(100);
-    res.json({success:true, count:players.length, data:players});
-    
-  }catch(err){
-    res.status(500).json({error:err.message});
+app.get('/admin/players', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const page  = parseInt(req.query.page)  || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const players = await GameState.find()
+      .sort({ updatedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+    const total = await GameState.countDocuments();
+    res.json({ success: true, total, page, count: players.length, data: players });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Get player by ID
-app.get('/admin/player/:userId', async(req,res)=>{
-  try{
-    const adminKey = req.headers['x-admin-key'];
-    if(adminKey !== process.env.ADMIN_KEY){
-      return res.status(401).json({error:'Unauthorized'});
-    }
-    
-    const player = await GameState.findOne({userId:parseInt(req.params.userId)});
-    if(!player) return res.status(404).json({error:'Player not found'});
-    
-    res.json({success:true, data:player});
-    
-  }catch(err){
-    res.status(500).json({error:err.message});
+app.get('/admin/player/:userId', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const player = await GameState.findOne({ userId: parseInt(req.params.userId) }).lean();
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+    res.json({ success: true, data: player });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Reset player progress
-app.post('/admin/reset/:userId', async(req,res)=>{
-  try{
-    const adminKey = req.headers['x-admin-key'];
-    if(adminKey !== process.env.ADMIN_KEY){
-      return res.status(401).json({error:'Unauthorized'});
-    }
-    
+app.post('/admin/reset/:userId', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
     const userId = parseInt(req.params.userId);
-    const result = await GameState.findOneAndDelete({userId});
-    
-    res.json({success:true, message:`Player ${userId} reset`});
-    
-  }catch(err){
-    res.status(500).json({error:err.message});
+    await GameState.findOneAndDelete({ userId });
+    res.json({ success: true, message: `Player ${userId} reset` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ═══════════════════════════════════════════════════════════════
-// DATABASE CONNECTION & SERVER START
+// DATABASE + SERVER START
 // ═══════════════════════════════════════════════════════════════
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser:true,
-  useUnifiedTopology:true
-})
-.then(()=>{
-  console.log('✓ MongoDB connected');
-  app.listen(PORT, ()=>{
-    console.log(`✓ Server running on port ${PORT}`);
-    console.log(`✓ Telegram token: ${TELEGRAM_BOT_TOKEN?'✓':'✗'}`);
-  });
-})
-.catch(err=>{
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
+async function startServer() {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('✓ MongoDB connected');
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✓ Server running on port ${PORT}`);
+      console.log(`✓ Telegram token: ${TELEGRAM_BOT_TOKEN ? '✓ set' : '✗ missing (dev mode)'}`);
+      console.log(`✓ Admin key:      ${process.env.ADMIN_KEY ? '✓ set' : '✗ missing'}`);
+    });
+  } catch (err) {
+    console.error('Startup error:', err);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Graceful shutdown
-process.on('SIGTERM', async()=>{
+process.on('SIGTERM', async () => {
   console.log('Shutting down gracefully...');
   await mongoose.connection.close();
   process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  await mongoose.connection.close();
+  process.exit(0);
+});
+
+// Логируем uncaught errors вместо краша
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
