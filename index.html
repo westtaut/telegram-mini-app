@@ -715,6 +715,8 @@ function upgBld(e,id){
   if(first){toast('🎉 '+b.name+' открыто! Нажми карточку для игры');if(Math.random()<.3){s.mgr=true;setTimeout(()=>toast('😺 '+b.mgr+' принят!'),800);}}
   if(BS.arena.lvl>=50&&BS.mem.lvl>=50&&!window._synShown){window._synShown=true;toast('⚡ СИНЕРГИЯ: Вирусный Стрим! +25%!');ACHS[3].un=true;}
   renderBlds();renderCity();
+  // Сохраняем сразу после апгрейда — не ждём таймер
+  saveToServer(true);
 }
 
 function renderCity(){
@@ -1860,10 +1862,18 @@ function applyData(data){
 function saveLocal(initData){
   try{
     const uid=getUserId();
-    const key='ce_'+(uid||'guest');
+    // uid-based key: разные пользователи не перетирают данные друг друга
+    // Если uid неизвестен — сохраняем во ВСЕ возможные ключи, чтобы найти при загрузке
     const p=buildPayload(initData||''); delete p.initData;
-    localStorage.setItem(key, JSON.stringify({ts:Date.now(),data:p}));
-  }catch(e){}
+    const blob=JSON.stringify({ts:Date.now(),data:p});
+    if(uid){
+      localStorage.setItem('ce_'+uid, blob);
+    } else {
+      // uid ещё неизвестен — сохраняем в гостевой ключ как запасной
+      localStorage.setItem('ce_guest', blob);
+    }
+    dbg('saveLocal key=ce_'+(uid||'guest')+' coins='+G.coins);
+  }catch(e){ dbg('saveLocal err: '+e.message); }
 }
 function loadLocal(){
   try{
@@ -1925,15 +1935,16 @@ async function saveToServer(silent=true){
   if(_syncBusy){ _pendingSave=true; return; }
 
   const initData=getInitData();
+  // Всегда сохраняем локально — initData может не быть вне Telegram
+  saveLocal(initData);
+
   if(!initData){
     dbg('save: no initData, local only');
-    saveLocal();
     setSyncStatus('💾','Локально','var(--dim)');
     return;
   }
   if(!SERVER_URL||SERVER_URL.includes('YOUR-APP')){
     dbg('save: SERVER_URL not set');
-    saveLocal(initData);
     return;
   }
 
@@ -1942,20 +1953,39 @@ async function saveToServer(silent=true){
   try{
     const r=await apiPost('/api/sync', buildPayload(initData));
     if(r&&r.ok){
-      saveLocal(initData);
       setSyncStatus('☁️','Сохранено','var(--green)');
       if(!silent) toast('✅ Прогресс сохранён!');
       dbg('save: ok uid='+getUserId());
     } else {
       const code=r?r.status:'timeout';
       setSyncStatus('⚠️','Ошибка '+code,'var(--red)');
-      saveLocal(initData);
       dbg('save: http '+code);
       if(!silent) toast('⚠️ Сервер ответил: '+code);
     }
   }finally{
     _syncBusy=false;
     if(_pendingSave){ _pendingSave=false; setTimeout(()=>saveToServer(true),2000); }
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// SAVE BEACON — надёжное сохранение при закрытии/фоне
+// sendBeacon гарантированно отправляет данные даже когда
+// страница закрывается (в отличие от обычного fetch)
+// ─────────────────────────────────────────────────────
+function saveBeacon(){
+  const initData=getInitData();
+  // Локальный кэш — всегда синхронно
+  saveLocal(initData);
+
+  if(!initData||!SERVER_URL||SERVER_URL.includes('YOUR-APP')) return;
+  try{
+    const payload=JSON.stringify(buildPayload(initData));
+    const blob=new Blob([payload],{type:'application/json'});
+    const sent=navigator.sendBeacon(SERVER_URL+'/api/sync', blob);
+    dbg('beacon sent='+sent+' bytes='+payload.length);
+  }catch(e){
+    dbg('beacon error: '+e.message);
   }
 }
 
@@ -2030,7 +2060,7 @@ function init(){
   loadFromServer().then(loaded=>{
     renderBlds(); renderCity();
     setInterval(tick,100); setInterval(tickTimers,1000);
-    setInterval(()=>saveToServer(true), 30000); // автосохранение каждые 30с
+    setInterval(()=>saveToServer(true), 5000); // автосохранение каждые 5с
     setInterval(()=>{
       if(G.totalEarned>=1000000&&!ACHS[1].un){ACHS[1].un=true;G.gems+=50;toast('🌟 Достижение: Молодой магнат! +50 💎');}
     },3000);
@@ -2040,11 +2070,17 @@ function init(){
   });
 
   // 4. Сохранение при уходе/закрытии
-  window.addEventListener('pagehide',()=>{ saveToServer(true); saveLocal(getInitData()); });
-  window.addEventListener('beforeunload',()=>saveLocal(getInitData()));
-  // На мобильном Telegram: сохранять при скрытии экрана
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='hidden') saveToServer(true);
+  // ✅ sendBeacon — единственный надёжный способ сохранить при закрытии
+  //    Обычный fetch/async НЕ успевает завершиться при pagehide
+  window.addEventListener('pagehide', saveBeacon);
+  window.addEventListener('beforeunload', saveBeacon);
+  // Мобильный Telegram: сворачивание/переключение приложения
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden') saveBeacon();
+    // При возврате в приложение — перезагружаем данные с сервера
+    if(document.visibilityState==='visible') {
+      setTimeout(()=>loadFromServer().then(()=>{ renderBlds(); renderCity(); }), 500);
+    }
   });
 }
 document.addEventListener('DOMContentLoaded', init);
